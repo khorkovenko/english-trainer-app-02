@@ -1,0 +1,10 @@
+.p-tabview-nav {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+}
+
+.p-tabview-nav .p-tabview-title {
+    display: inline-block;
+    white-space: nowrap;
+}
