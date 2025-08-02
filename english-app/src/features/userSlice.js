@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { supabase } from '../supabaseClient'
+import { supabaseClient } from '../supabaseClient'
 
 export const fetchUser = createAsyncThunk('user/fetchUser', async () => {
-    const { data, error } = await supabase.from('users').select('*').limit(1).single()
+    const { data, error } = await supabaseClient.from('users').select('*').limit(1).single()
     if (error) throw error
     return data
 })

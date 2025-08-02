@@ -1,8 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit'
-import userReducer from '../features/userSlice'
+import vocabReducer from '../features/01vocabulary/vocabSlice'
 
 export const store = configureStore({
     reducer: {
-        user: userReducer,
+        vocab: vocabReducer,
     },
 })
