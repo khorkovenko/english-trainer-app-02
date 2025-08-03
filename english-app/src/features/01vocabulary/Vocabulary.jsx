@@ -13,6 +13,7 @@ import {
     fetchWordsByUserId,
     saveWord,
     deleteWordById,
+    deleteAllWords,
 } from './vocabSlice';
 
 const Vocabulary = () => {
@@ -78,17 +79,28 @@ const Vocabulary = () => {
         });
     };
 
-    const cmItems = [
-        {
-            label: 'Delete',
-            icon: 'pi pi-trash',
-            command: () => {
-                if (selectedWord) {
-                    confirmDelete(selectedWord);
+    const confirmFlushAll = () => {
+        confirmDialog({
+            message: 'Are you sure you want to delete all words?',
+            header: 'Confirm Flush',
+            icon: 'pi pi-exclamation-triangle',
+            acceptClassName: 'p-button-danger',
+            accept: () => {
+                if (user?.id) {
+                    dispatch(deleteAllWords(user.id));
                 }
             },
-        },
-    ];
+        });
+    };
+
+    const showHelp = () => {
+        toast.current.show({
+            severity: 'info',
+            summary: 'Help',
+            detail: 'You can add, edit, and delete vocabulary. Right-click a row for context options.',
+            life: 7000,
+        });
+    };
 
     const onAddNewWord = () => {
         if (!newWordData.word.trim()) {
@@ -114,60 +126,75 @@ const Vocabulary = () => {
     };
 
     const header = (
-        <div className="flex flex-wrap gap-3 justify-content-between align-items-center">
-            <div style={{ flexGrow: 1, minWidth: 200, maxWidth: 300 }}>
-                <span className="p-float-label" style={{ width: '100%' }}>
-                    <InputText
-                        id="globalSearch"
-                        type="search"
-                        onInput={(e) => setFilters({ global: { value: e.target.value, matchMode: 'contains' } })}
-                        placeholder=" "
-                        className="p-inputtext-sm"
-                        style={{ width: '100%' }}
-                    />
-                    <label htmlFor="globalSearch">Search words</label>
-                </span>
-            </div>
+        <div
+            className="p-d-flex p-ai-center"
+            style={{
+                gap: '0.75rem',
+                flexWrap: 'nowrap',
+                overflowX: 'auto',
+                paddingTop: '0.5rem',
+                paddingBottom: '0.5rem',
+                flexDirection: 'row'
+            }}
+        >
+            {/* Global search input */}
+            <span className="p-float-label" style={{ flex: '0 0 180px', minWidth: '180px' }}>
+            <InputText
+                id="globalSearch"
+                type="search"
+                onInput={(e) =>
+                    setFilters({ global: { value: e.target.value, matchMode: 'contains' } })
+                }
+                placeholder=" "
+                className="p-inputtext-sm w-full"
+            />
+            <label htmlFor="globalSearch">Search words</label>
+        </span>
 
-            <div className="flex gap-2 flex-wrap" style={{ flexGrow: 2, minWidth: 400, maxWidth: 600 }}>
-                <span className="p-float-label" style={{ flexGrow: 1, minWidth: 120 }}>
-                    <InputText
-                        id="newWord"
-                        value={newWordData.word}
-                        onChange={(e) => setNewWordData({ ...newWordData, word: e.target.value })}
-                        style={{ width: '100%' }}
-                        disabled={!userLoaded}
-                    />
-                    <label htmlFor="newWord">Word</label>
-                </span>
-                <span className="p-float-label" style={{ flexGrow: 1, minWidth: 150 }}>
-                    <InputText
-                        id="newExplanation"
-                        value={newWordData.explanation}
-                        onChange={(e) => setNewWordData({ ...newWordData, explanation: e.target.value })}
-                        style={{ width: '100%' }}
-                        disabled={!userLoaded}
-                    />
-                    <label htmlFor="newExplanation">Explanation</label>
-                </span>
-                <span className="p-float-label" style={{ flexGrow: 1, minWidth: 150 }}>
-                    <InputText
-                        id="newAssociation"
-                        value={newWordData.association}
-                        onChange={(e) => setNewWordData({ ...newWordData, association: e.target.value })}
-                        style={{ width: '100%' }}
-                        disabled={!userLoaded}
-                    />
-                    <label htmlFor="newAssociation">Association</label>
-                </span>
+            {/* Word input */}
+            <span className="p-float-label" style={{ flex: '0 0 140px', minWidth: '140px' }}>
+            <InputText
+                id="newWord"
+                value={newWordData.word}
+                onChange={(e) => setNewWordData({ ...newWordData, word: e.target.value })}
+                disabled={!userLoaded}
+            />
+            <label htmlFor="newWord">Word</label>
+        </span>
 
+            {/* Explanation input */}
+            <span className="p-float-label" style={{ flex: '0 0 160px', minWidth: '160px' }}>
+            <InputText
+                id="newExplanation"
+                value={newWordData.explanation}
+                onChange={(e) => setNewWordData({ ...newWordData, explanation: e.target.value })}
+                disabled={!userLoaded}
+            />
+            <label htmlFor="newExplanation">Explanation</label>
+        </span>
+
+            {/* Association input */}
+            <span className="p-float-label" style={{ flex: '0 0 160px', minWidth: '160px' }}>
+            <InputText
+                id="newAssociation"
+                value={newWordData.association}
+                onChange={(e) => setNewWordData({ ...newWordData, association: e.target.value })}
+                disabled={!userLoaded}
+            />
+            <label htmlFor="newAssociation">Association</label>
+        </span>
+
+            {/* Action buttons */}
+            <div
+                className="p-d-flex p-ai-center"
+                style={{ gap: '0.5rem', flexShrink: 0 }}
+            >
                 <Button
-                    label="Add Word"
+                    label="Add"
                     icon="pi pi-plus"
                     onClick={onAddNewWord}
                     disabled={!userLoaded}
                     className="p-button-success"
-                    style={{ height: '2.5rem' }}
                 />
                 <Button
                     label="Clear"
@@ -175,19 +202,42 @@ const Vocabulary = () => {
                     onClick={onClearNewWord}
                     disabled={!userLoaded}
                     className="p-button-secondary"
-                    style={{ height: '2.5rem' }}
                 />
                 <Button
-                    label="Reload Words"
+                    label="Reload"
                     icon="pi pi-refresh"
                     onClick={onReloadWords}
                     disabled={!userLoaded}
                     className="p-button-info"
-                    style={{ height: '2.5rem' }}
+                />
+                <Button
+                    label="Help"
+                    icon="pi pi-question-circle"
+                    onClick={showHelp}
+                    className="p-button-help"
+                />
+                <Button
+                    label="Flush"
+                    icon="pi pi-trash"
+                    onClick={confirmFlushAll}
+                    disabled={!userLoaded}
+                    className="p-button-danger"
                 />
             </div>
         </div>
     );
+
+    const cmItems = [
+        {
+            label: 'Delete',
+            icon: 'pi pi-trash',
+            command: () => {
+                if (selectedWord) {
+                    confirmDelete(selectedWord);
+                }
+            },
+        },
+    ];
 
     return (
         <div className="p-4">
@@ -200,7 +250,6 @@ const Vocabulary = () => {
                 dataKey="id"
                 header={header}
                 filters={filters}
-                filterDisplay="row"
                 globalFilterFields={['word', 'explanation', 'association']}
                 editMode="row"
                 onRowEditComplete={onRowEditComplete}
@@ -214,10 +263,14 @@ const Vocabulary = () => {
                 tableStyle={{ minWidth: '50rem' }}
                 emptyMessage="No words found."
             >
-                <Column field="word" header="Word" editor={textEditor} sortable filter filterPlaceholder="Filter by word" />
-                <Column field="explanation" header="Explanation" editor={textEditor} sortable filter filterPlaceholder="Filter by explanation" />
-                <Column field="association" header="Association" editor={textEditor} sortable filter filterPlaceholder="Filter by association" />
-                <Column rowEditor headerStyle={{ width: '10%', minWidth: '8rem' }} bodyStyle={{ textAlign: 'center' }} />
+                <Column field="word" header="Word" editor={textEditor} sortable />
+                <Column field="explanation" header="Explanation" editor={textEditor} sortable />
+                <Column field="association" header="Association" editor={textEditor} sortable />
+                <Column
+                    rowEditor
+                    headerStyle={{ width: '10%', minWidth: '8rem' }}
+                    bodyStyle={{ textAlign: 'center' }}
+                />
             </DataTable>
 
             <ContextMenu model={cmItems} ref={contextMenu} />

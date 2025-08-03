@@ -146,8 +146,36 @@ const vocabSlice = createSlice({
             .addCase(deleteWordById.rejected, (state, action) => {
                 state.error = action.payload;
                 state.loading = false;
-            });
+            })
+
+            .addCase(deleteAllWords.pending, state => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteAllWords.fulfilled, state => {
+                state.loading = false;
+            })
+            .addCase(deleteAllWords.rejected, (state, action) => {
+                state.error = action.payload;
+                state.loading = false;
+            })
+
     },
 });
+
+// Delete all words
+export const deleteAllWords = createAsyncThunk(
+    'vocab/deleteAllWords',
+    async (userId, thunkAPI) => {
+        const { error } = await supabaseClient
+            .from('words')
+            .delete()
+            .eq('user_id', userId);
+
+        if (error) return thunkAPI.rejectWithValue(error.message);
+
+        return thunkAPI.dispatch(fetchWordsByUserId(userId));
+    }
+);
 
 export default vocabSlice.reducer;
