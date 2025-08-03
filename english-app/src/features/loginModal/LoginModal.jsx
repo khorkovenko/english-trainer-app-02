@@ -6,20 +6,22 @@ import { Password } from 'primereact/password'
 import { Button } from 'primereact/button'
 import { supabaseClient } from '../../app/supabaseClient'
 
-export default function LoginModal({ visible, onHide }) {
+export default function LoginModal({ visible }) {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
+    const [errorMessage, setErrorMessage] = useState('')
 
     const handleLogin = async () => {
         setLoading(true)
+        setErrorMessage('')
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password })
         setLoading(false)
-        if (error) alert(error.message)
-        else onHide()
+        if (error) setErrorMessage(error.message)
     }
 
     const handleGoogleLogin = async () => {
+        setErrorMessage('')
         await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo: window.location.origin },
@@ -28,22 +30,23 @@ export default function LoginModal({ visible, onHide }) {
 
     const handleSignUp = async () => {
         setLoading(true)
+        setErrorMessage('')
         const { error } = await supabaseClient.auth.signUp({ email, password })
         setLoading(false)
-        if (error) alert(error.message)
-        else alert('Check your email to confirm signup.')
+        if (error) setErrorMessage(error.message)
+        else setErrorMessage('✅ Check your email to confirm signup.')
     }
 
     return (
         <Dialog
             header="Login"
             visible={visible}
-            onHide={onHide}
             modal
-            dismissableMask
-            closable
+            dismissableMask={false}
+            closable={false}
             baseZIndex={10000}
             style={{ width: '25rem' }}
+            draggable={false}
         >
             <div className="p-fluid">
                 <label htmlFor="email">Email</label>
@@ -65,6 +68,12 @@ export default function LoginModal({ visible, onHide }) {
                 />
 
                 <div style={{ height: '10px' }} />
+
+                {errorMessage && (
+                    <div style={{ color: errorMessage.startsWith('✅') ? 'green' : 'red', marginBottom: 10 }}>
+                        {errorMessage}
+                    </div>
+                )}
 
                 <Button
                     label="Login"
@@ -94,10 +103,6 @@ export default function LoginModal({ visible, onHide }) {
                     className="w-full"
                 />
             </div>
-
-
-
-
         </Dialog>
     )
 }

@@ -16,7 +16,6 @@ import { Accordion, AccordionTab } from 'primereact/accordion'
 import { TabPanel, TabView } from 'primereact/tabview'
 
 import LoginModal from './features/loginModal/LoginModal'
-
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { supabaseClient } from './app/supabaseClient'
 
@@ -25,9 +24,8 @@ function App() {
     const { user, status, error } = useSelector(state => state.auth)
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-    const [loginVisible, setLoginVisible] = useState(false)
 
-    // Fetch user on app mount and on auth state change
+    // Fetch user on mount and listen to auth state changes
     useEffect(() => {
         dispatch(fetchAuthUser())
 
@@ -40,20 +38,12 @@ function App() {
         }
     }, [dispatch])
 
-    // Responsive tabs
+    // Update on window resize
     useEffect(() => {
-        function handleResize() {
-            setIsMobile(window.innerWidth < 768)
-        }
+        const handleResize = () => setIsMobile(window.innerWidth < 768)
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
     }, [])
-
-    // Show login modal if no user after fetch succeeded
-    useEffect(() => {
-        if (status === 'succeeded' && !user) setLoginVisible(true)
-        else setLoginVisible(false)
-    }, [status, user])
 
     const menuItems = [
         { label: 'English Trainer', icon: 'pi pi-book' },
@@ -61,11 +51,7 @@ function App() {
             label: user ? `Logout (${user.email})` : 'Login',
             icon: user ? 'pi pi-sign-out' : 'pi pi-sign-in',
             command: () => {
-                if (user) {
-                    dispatch(signOut())
-                } else {
-                    setLoginVisible(true)
-                }
+                if (user) dispatch(signOut())
             },
         },
     ]
@@ -83,37 +69,13 @@ function App() {
     return (
         <div className="h-screen flex flex-col">
             {status === 'loading' && (
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: '100vh',
-                        width: '100vw',
-                    }}
-                >
+                <div className="flex justify-center items-center h-screen w-screen">
                     <ProgressSpinner />
                 </div>
             )}
 
-            {/* Debug info */}
-            <div
-                style={{
-                    position: 'fixed',
-                    bottom: 5,
-                    left: 5,
-                    color: '#888',
-                    fontSize: 12,
-                    zIndex: 10000,
-                    userSelect: 'none',
-                }}
-            >
-                Status: {status} <br />
-                User: {user ? user.email : 'No user'} <br />
-                {error && <span style={{ color: 'red' }}>Error: {error}</span>}
-            </div>
-
-            <LoginModal visible={loginVisible} onHide={() => setLoginVisible(false)} />
+            {/* Login modal shown only when needed */}
+            <LoginModal visible={!user && status === 'succeeded'} />
 
             {status === 'succeeded' && user && (
                 <>
