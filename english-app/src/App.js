@@ -29,12 +29,12 @@ function App() {
     useEffect(() => {
         dispatch(fetchAuthUser())
 
-        const { data: authListener } = supabaseClient.auth.onAuthStateChange(() => {
+        const authListener = supabaseClient.auth.onAuthStateChange(() => {
             dispatch(fetchAuthUser())
         })
 
         return () => {
-            authListener?.unsubscribe()
+            authListener.data?.subscription?.unsubscribe()
         }
     }, [dispatch])
 

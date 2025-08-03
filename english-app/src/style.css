@@ -1,10 +1,25 @@
+/* adaptive tabview */
 .p-tabview-nav {
     overflow-x: auto;
     white-space: nowrap;
-    -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
 }
 
 .p-tabview-nav .p-tabview-title {
     display: inline-block;
     white-space: nowrap;
+}
+
+/* tabview underline fix */
+.p-tabview-nav {
+    padding-bottom: 4px;
+    position: relative;
+    z-index: 1;
+}
+
+.p-tabview {
+    overflow: visible;
+}
+
+.p-tabview .p-tabview-nav li.p-highlight {
+    border-bottom: 3px solid var(--primary-color, #007ad9);
 }
