@@ -6,8 +6,6 @@ import { InputText } from 'primereact/inputtext';
 import { Toast } from 'primereact/toast';
 import { ContextMenu } from 'primereact/contextmenu';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
-import { Dialog } from 'primereact/dialog';
-import { Sidebar } from 'primereact/sidebar';
 import { Button } from 'primereact/button';
 
 import {
@@ -27,25 +25,8 @@ const Vocabulary = () => {
     const [filters, setFilters] = useState({ global: { value: null, matchMode: 'contains' } });
     const [selectedWord, setSelectedWord] = useState(null);
     const [userLoaded, setUserLoaded] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalData, setModalData] = useState(null);
-
-    // For Add Word Sidebar
-    const [sidebarVisible, setSidebarVisible] = useState(false);
+    const [initialLoadDone, setInitialLoadDone] = useState(false);
     const [newWordData, setNewWordData] = useState({ word: '', explanation: '', association: '' });
-
-    useEffect(() => {
-        dispatch(fetchAuthUser())
-            .unwrap()
-            .then(() => setUserLoaded(true))
-            .catch(() => setUserLoaded(false));
-    }, [dispatch]);
-
-    useEffect(() => {
-        if (userLoaded && user?.id) {
-            dispatch(fetchWordsByUserId(user.id));
-        }
-    }, [dispatch, userLoaded, user]);
 
     useEffect(() => {
         if (error) {
@@ -53,26 +34,35 @@ const Vocabulary = () => {
         }
     }, [error]);
 
+    useEffect(() => {
+        if (!initialLoadDone) {
+            dispatch(fetchAuthUser())
+                .unwrap()
+                .then(() => setUserLoaded(true))
+                .catch(() => setUserLoaded(false))
+                .finally(() => setInitialLoadDone(true));
+        }
+    }, [dispatch, initialLoadDone]);
+
+    useEffect(() => {
+        if (userLoaded && user?.id) {
+            dispatch(fetchWordsByUserId(user.id));
+        }
+    }, [dispatch, userLoaded, user]);
+
     const onRowEditComplete = (e) => {
         if (!user?.id) return;
         const { newData } = e;
         dispatch(saveWord({ userId: user.id, wordObj: newData }));
     };
 
-    const textEditor = (options) => {
-        return (
-            <InputText
-                type="text"
-                value={options.value}
-                onChange={(e) => options.editorCallback(e.target.value)}
-            />
-        );
-    };
-
-    const onRowDoubleClick = (e) => {
-        setModalData(e.data);
-        setModalVisible(true);
-    };
+    const textEditor = (options) => (
+        <InputText
+            type="text"
+            value={options.value}
+            onChange={(e) => options.editorCallback(e.target.value)}
+        />
+    );
 
     const confirmDelete = (word) => {
         confirmDialog({
@@ -84,7 +74,7 @@ const Vocabulary = () => {
                 if (user?.id && word?.id) {
                     dispatch(deleteWordById({ userId: user.id, wordId: word.id }));
                 }
-            }
+            },
         });
     };
 
@@ -96,31 +86,11 @@ const Vocabulary = () => {
                 if (selectedWord) {
                     confirmDelete(selectedWord);
                 }
-            }
-        }
+            },
+        },
     ];
 
-    const header = (
-        <div className="p-input-icon-left mb-3 flex flex-wrap gap-2">
-            <InputText
-                type="search"
-                onInput={(e) => setFilters({ global: { value: e.target.value, matchMode: 'contains' } })}
-                placeholder="Search words..."
-                className="p-inputtext-sm"
-                style={{ flexGrow: 1, minWidth: '200px' }}
-            />
-            <Button
-                label="Add New Word"
-                icon="pi pi-plus"
-                onClick={() => setSidebarVisible(true)}
-                disabled={!userLoaded}
-                className="p-button-primary"
-            />
-        </div>
-    );
-
-    // Save new word from sidebar
-    const onSidebarSave = () => {
+    const onAddNewWord = () => {
         if (!newWordData.word.trim()) {
             toast.current.show({ severity: 'warn', summary: 'Validation', detail: 'Word cannot be empty' });
             return;
@@ -130,9 +100,94 @@ const Vocabulary = () => {
             return;
         }
         dispatch(saveWord({ userId: user.id, wordObj: newWordData }));
-        setSidebarVisible(false);
         setNewWordData({ word: '', explanation: '', association: '' });
     };
+
+    const onClearNewWord = () => {
+        setNewWordData({ word: '', explanation: '', association: '' });
+    };
+
+    const onReloadWords = () => {
+        if (user?.id) {
+            dispatch(fetchWordsByUserId(user.id));
+        }
+    };
+
+    const header = (
+        <div className="flex flex-wrap gap-3 justify-content-between align-items-center">
+            <div style={{ flexGrow: 1, minWidth: 200, maxWidth: 300 }}>
+                <span className="p-float-label" style={{ width: '100%' }}>
+                    <InputText
+                        id="globalSearch"
+                        type="search"
+                        onInput={(e) => setFilters({ global: { value: e.target.value, matchMode: 'contains' } })}
+                        placeholder=" "
+                        className="p-inputtext-sm"
+                        style={{ width: '100%' }}
+                    />
+                    <label htmlFor="globalSearch">Search words</label>
+                </span>
+            </div>
+
+            <div className="flex gap-2 flex-wrap" style={{ flexGrow: 2, minWidth: 400, maxWidth: 600 }}>
+                <span className="p-float-label" style={{ flexGrow: 1, minWidth: 120 }}>
+                    <InputText
+                        id="newWord"
+                        value={newWordData.word}
+                        onChange={(e) => setNewWordData({ ...newWordData, word: e.target.value })}
+                        style={{ width: '100%' }}
+                        disabled={!userLoaded}
+                    />
+                    <label htmlFor="newWord">Word</label>
+                </span>
+                <span className="p-float-label" style={{ flexGrow: 1, minWidth: 150 }}>
+                    <InputText
+                        id="newExplanation"
+                        value={newWordData.explanation}
+                        onChange={(e) => setNewWordData({ ...newWordData, explanation: e.target.value })}
+                        style={{ width: '100%' }}
+                        disabled={!userLoaded}
+                    />
+                    <label htmlFor="newExplanation">Explanation</label>
+                </span>
+                <span className="p-float-label" style={{ flexGrow: 1, minWidth: 150 }}>
+                    <InputText
+                        id="newAssociation"
+                        value={newWordData.association}
+                        onChange={(e) => setNewWordData({ ...newWordData, association: e.target.value })}
+                        style={{ width: '100%' }}
+                        disabled={!userLoaded}
+                    />
+                    <label htmlFor="newAssociation">Association</label>
+                </span>
+
+                <Button
+                    label="Add Word"
+                    icon="pi pi-plus"
+                    onClick={onAddNewWord}
+                    disabled={!userLoaded}
+                    className="p-button-success"
+                    style={{ height: '2.5rem' }}
+                />
+                <Button
+                    label="Clear"
+                    icon="pi pi-times"
+                    onClick={onClearNewWord}
+                    disabled={!userLoaded}
+                    className="p-button-secondary"
+                    style={{ height: '2.5rem' }}
+                />
+                <Button
+                    label="Reload Words"
+                    icon="pi pi-refresh"
+                    onClick={onReloadWords}
+                    disabled={!userLoaded}
+                    className="p-button-info"
+                    style={{ height: '2.5rem' }}
+                />
+            </div>
+        </div>
+    );
 
     return (
         <div className="p-4">
@@ -142,7 +197,6 @@ const Vocabulary = () => {
 
             <DataTable
                 value={words}
-                loading={loading}
                 dataKey="id"
                 header={header}
                 filters={filters}
@@ -150,7 +204,6 @@ const Vocabulary = () => {
                 globalFilterFields={['word', 'explanation', 'association']}
                 editMode="row"
                 onRowEditComplete={onRowEditComplete}
-                onRowDoubleClick={onRowDoubleClick}
                 contextMenuSelection={selectedWord}
                 onContextMenuSelectionChange={(e) => setSelectedWord(e.value)}
                 onContextMenu={(e) => {
@@ -159,6 +212,7 @@ const Vocabulary = () => {
                     e.originalEvent.preventDefault();
                 }}
                 tableStyle={{ minWidth: '50rem' }}
+                emptyMessage="No words found."
             >
                 <Column field="word" header="Word" editor={textEditor} sortable filter filterPlaceholder="Filter by word" />
                 <Column field="explanation" header="Explanation" editor={textEditor} sortable filter filterPlaceholder="Filter by explanation" />
@@ -167,66 +221,6 @@ const Vocabulary = () => {
             </DataTable>
 
             <ContextMenu model={cmItems} ref={contextMenu} />
-
-            <Dialog
-                visible={modalVisible}
-                onHide={() => setModalVisible(false)}
-                header={modalData?.word || 'Word Detail'}
-                style={{ width: '100vw', maxWidth: '100vw', height: '100vh' }}
-                modal
-                dismissableMask
-            >
-                <div className="p-4">
-                    <h3 className="mb-3">Explanation</h3>
-                    <p>{modalData?.explanation}</p>
-                </div>
-            </Dialog>
-
-            {/* Add Word Sidebar */}
-            <Sidebar
-                visible={sidebarVisible}
-                position="top"
-                fullScreen
-                onHide={() => setSidebarVisible(false)}
-                style={{ padding: '2rem', overflowY: 'auto' }}
-            >
-                <h2 className="mb-6">{`Add New Word`}</h2>
-
-                <div className="p-fluid p-formgrid p-grid" style={{ gap: '1.5rem' }}>
-                    <div className="p-field p-col-12 p-md-4">
-                        <label htmlFor="word" className="mb-2 block">Word</label>
-                        <InputText
-                            id="word"
-                            value={newWordData.word}
-                            onChange={(e) => setNewWordData({ ...newWordData, word: e.target.value })}
-                            style={{ width: '100%' }}
-                        />
-                    </div>
-                    <div className="p-field p-col-12 p-md-4">
-                        <label htmlFor="explanation" className="mb-2 block">Explanation</label>
-                        <InputText
-                            id="explanation"
-                            value={newWordData.explanation}
-                            onChange={(e) => setNewWordData({ ...newWordData, explanation: e.target.value })}
-                            style={{ width: '100%' }}
-                        />
-                    </div>
-                    <div className="p-field p-col-12 p-md-4">
-                        <label htmlFor="association" className="mb-2 block">Association</label>
-                        <InputText
-                            id="association"
-                            value={newWordData.association}
-                            onChange={(e) => setNewWordData({ ...newWordData, association: e.target.value })}
-                            style={{ width: '100%' }}
-                        />
-                    </div>
-                </div>
-
-                <div className="flex justify-content-between mt-6">
-                    <Button label="Cancel" className="p-button-text" onClick={() => setSidebarVisible(false)} />
-                    <Button label="Save" icon="pi pi-check" onClick={onSidebarSave} />
-                </div>
-            </Sidebar>
         </div>
     );
 };
