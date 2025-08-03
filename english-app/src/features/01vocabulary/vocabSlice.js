@@ -1,32 +1,22 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import {supabaseClient} from '../../supabaseClient';
+import { supabaseClient } from '../../supabaseClient';
 
-const USER_EMAIL = "horkovenko.k@gmail.com";
-
-export const fetchUserByEmail = createAsyncThunk(
-    'vocab/fetchUser',
-    async (email, thunkAPI) => {
+// Get the currently authenticated user
+export const fetchAuthUser = createAsyncThunk(
+    'vocab/fetchAuthUser',
+    async (_, thunkAPI) => {
         try {
-            const normalizedEmail = email.trim().toLowerCase();
-            console.log('Fetching user by email:', normalizedEmail);
-
-            const { data, error } = await supabaseClient
-                .from('users')
-                .select('*')
-                .ilike('email', normalizedEmail)  // case-insensitive match
-                .maybeSingle();
-
+            const { data, error } = await supabaseClient.auth.getUser();
             if (error) return thunkAPI.rejectWithValue(error.message);
-            if (!data) return thunkAPI.rejectWithValue('No user found with this email.');
-
-            return data;
+            if (!data?.user) return thunkAPI.rejectWithValue('No user logged in');
+            return data.user;
         } catch (err) {
             return thunkAPI.rejectWithValue(err.message);
         }
     }
 );
 
-// Async thunk: fetch vocab words by user_id
+// Get words for that user
 export const fetchWordsByUserId = createAsyncThunk(
     'vocab/fetchWords',
     async (userId, thunkAPI) => {
@@ -41,43 +31,48 @@ export const fetchWordsByUserId = createAsyncThunk(
     }
 );
 
-// Async thunk: add or update a word
+// Insert or update word
 export const saveWord = createAsyncThunk(
     'vocab/saveWord',
     async ({ userId, wordObj }, thunkAPI) => {
-        if (wordObj.id) {
-            // update
-            const { error } = await supabaseClient
-                .from('words')
-                .update({
+        try {
+            if (wordObj.id) {
+                // update
+                const { error } = await supabaseClient
+                    .from('words')
+                    .update({
+                        word: wordObj.word,
+                        explanation: wordObj.explanation,
+                        association: wordObj.association,
+                        updated_at: new Date(),
+                    })
+                    .eq('id', wordObj.id);
+                if (error) return thunkAPI.rejectWithValue(error.message);
+            } else {
+                // insert
+                const insertObj = {
                     word: wordObj.word,
                     explanation: wordObj.explanation,
                     association: wordObj.association,
-                    updated_at: new Date()
-                })
-                .eq('id', wordObj.id);
-            if (error) return thunkAPI.rejectWithValue(error.message);
-        } else {
-            // insert
-            const insertObj = {
-                word: wordObj.word,
-                explanation: wordObj.explanation,
-                association: wordObj.association,
-                user_id: userId,
-                created_at: new Date(),
-                updated_at: new Date(),
-            };
+                    user_id: userId,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                };
 
-            const { error } = await supabaseClient
-                .from('words')
-                .insert([insertObj]);
-            if (error) return thunkAPI.rejectWithValue(error.message);
+                const { error } = await supabaseClient
+                    .from('words')
+                    .insert([insertObj]);
+                if (error) return thunkAPI.rejectWithValue(error.message);
+            }
+
+            return thunkAPI.dispatch(fetchWordsByUserId(userId));
+        } catch (err) {
+            return thunkAPI.rejectWithValue(err.message);
         }
-        return thunkAPI.dispatch(fetchWordsByUserId(userId));
     }
 );
 
-// Async thunk: delete word by id
+// Delete a word
 export const deleteWordById = createAsyncThunk(
     'vocab/deleteWord',
     async ({ userId, wordId }, thunkAPI) => {
@@ -92,41 +87,6 @@ export const deleteWordById = createAsyncThunk(
     }
 );
 
-// Async thunk: flush all data (delete all words and user by email)
-export const flushAllData = createAsyncThunk(
-    'vocab/flushAll',
-    async (_, thunkAPI) => {
-        // 1. Find user by email
-        const { data: user, error: userError } = await supabaseClient
-            .from('users')
-            .select('id')
-            .eq('email', USER_EMAIL)
-            .limit(1)
-            .single();
-
-        if (userError) return thunkAPI.rejectWithValue(userError.message);
-        if (!user) return thunkAPI.rejectWithValue('User not found');
-
-        // 2. Delete all words for that user
-        const { error: delWordsError } = await supabaseClient
-            .from('words')
-            .delete()
-            .eq('user_id', user.id);
-
-        if (delWordsError) return thunkAPI.rejectWithValue(delWordsError.message);
-
-        // 3. Delete user record
-        const { error: delUserError } = await supabaseClient
-            .from('users')
-            .delete()
-            .eq('email', USER_EMAIL);
-
-        if (delUserError) return thunkAPI.rejectWithValue(delUserError.message);
-
-        return true;
-    }
-);
-
 const vocabSlice = createSlice({
     name: 'vocab',
     initialState: {
@@ -136,22 +96,22 @@ const vocabSlice = createSlice({
         error: null,
     },
     reducers: {},
-    extraReducers: (builder) => {
+    extraReducers: builder => {
         builder
-            .addCase(fetchUserByEmail.pending, (state) => {
+            .addCase(fetchAuthUser.pending, state => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchUserByEmail.fulfilled, (state, action) => {
+            .addCase(fetchAuthUser.fulfilled, (state, action) => {
                 state.user = action.payload;
                 state.loading = false;
             })
-            .addCase(fetchUserByEmail.rejected, (state, action) => {
+            .addCase(fetchAuthUser.rejected, (state, action) => {
                 state.error = action.payload;
                 state.loading = false;
             })
 
-            .addCase(fetchWordsByUserId.pending, (state) => {
+            .addCase(fetchWordsByUserId.pending, state => {
                 state.loading = true;
                 state.error = null;
             })
@@ -164,11 +124,11 @@ const vocabSlice = createSlice({
                 state.loading = false;
             })
 
-            .addCase(saveWord.pending, (state) => {
+            .addCase(saveWord.pending, state => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(saveWord.fulfilled, (state) => {
+            .addCase(saveWord.fulfilled, state => {
                 state.loading = false;
             })
             .addCase(saveWord.rejected, (state, action) => {
@@ -176,32 +136,18 @@ const vocabSlice = createSlice({
                 state.loading = false;
             })
 
-            .addCase(deleteWordById.pending, (state) => {
+            .addCase(deleteWordById.pending, state => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(deleteWordById.fulfilled, (state) => {
+            .addCase(deleteWordById.fulfilled, state => {
                 state.loading = false;
             })
             .addCase(deleteWordById.rejected, (state, action) => {
                 state.error = action.payload;
                 state.loading = false;
-            })
-
-            .addCase(flushAllData.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(flushAllData.fulfilled, (state) => {
-                state.user = null;
-                state.words = [];
-                state.loading = false;
-            })
-            .addCase(flushAllData.rejected, (state, action) => {
-                state.error = action.payload;
-                state.loading = false;
             });
-    }
+    },
 });
 
 export default vocabSlice.reducer;

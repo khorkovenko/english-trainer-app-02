@@ -11,11 +11,10 @@ import { Sidebar } from 'primereact/sidebar';
 import { Button } from 'primereact/button';
 
 import {
-    fetchUserByEmail,
+    fetchAuthUser,
     fetchWordsByUserId,
     saveWord,
     deleteWordById,
-    flushAllData
 } from './vocabSlice';
 
 const USER_EMAIL = 'horkovenko.k@gmail.com';
@@ -25,7 +24,7 @@ const Vocabulary = () => {
     const toast = useRef(null);
     const contextMenu = useRef(null);
 
-    const { user, words, loading, error } = useSelector((state) => state.vocab);
+    const { user, words, loading, error } = useSelector((state) => state.vocab || {});
 
     const [filters, setFilters] = useState({ global: { value: null, matchMode: 'contains' } });
     const [selectedWord, setSelectedWord] = useState(null);
@@ -38,7 +37,7 @@ const Vocabulary = () => {
     const [newWordData, setNewWordData] = useState({ word: '', explanation: '', association: '' });
 
     useEffect(() => {
-        dispatch(fetchUserByEmail(USER_EMAIL))
+        dispatch(fetchAuthUser())
             .unwrap()
             .then(() => setUserLoaded(true))
             .catch(() => setUserLoaded(false));
@@ -118,17 +117,6 @@ const Vocabulary = () => {
                 onClick={() => setSidebarVisible(true)}
                 disabled={!userLoaded}
                 className="p-button-primary"
-            />
-            <Button
-                label="Flush All Data"
-                icon="pi pi-trash"
-                onClick={() => {
-                    if (window.confirm('Delete ALL your vocab words and user data?')) {
-                        dispatch(flushAllData());
-                    }
-                }}
-                disabled={!userLoaded}
-                className="p-button-danger"
             />
         </div>
     );
