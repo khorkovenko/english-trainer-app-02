@@ -17,8 +17,6 @@ import {
     deleteWordById,
 } from './vocabSlice';
 
-const USER_EMAIL = 'horkovenko.k@gmail.com';
-
 const Vocabulary = () => {
     const dispatch = useDispatch();
     const toast = useRef(null);

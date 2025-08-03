@@ -1,12 +1,15 @@
+// src/features/loginModal/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { supabaseClient } from '../../supabaseClient'
+import { supabaseClient } from '../../app/supabaseClient'
 
+// Fetch current session and return user or null
 export const fetchAuthUser = createAsyncThunk('auth/fetchUser', async () => {
-    const { data, error } = await supabaseClient.auth.getUser()
-    if (error || !data?.user) throw error || new Error('No user found')
-    return data.user
+    const { data, error } = await supabaseClient.auth.getSession()
+    if (error) throw error
+    return data?.session?.user ?? null
 })
 
+// Sign out user
 export const signOut = createAsyncThunk('auth/signOut', async () => {
     const { error } = await supabaseClient.auth.signOut()
     if (error) throw error
@@ -17,7 +20,7 @@ const authSlice = createSlice({
     name: 'auth',
     initialState: {
         user: null,
-        status: 'idle',
+        status: 'idle', // idle | loading | succeeded | failed
         error: null,
     },
     reducers: {},
@@ -25,18 +28,22 @@ const authSlice = createSlice({
         builder
             .addCase(fetchAuthUser.pending, state => {
                 state.status = 'loading'
+                state.error = null
             })
             .addCase(fetchAuthUser.fulfilled, (state, action) => {
                 state.status = 'succeeded'
                 state.user = action.payload
+                state.error = null
             })
             .addCase(fetchAuthUser.rejected, (state, action) => {
                 state.status = 'failed'
                 state.error = action.error.message
+                state.user = null
             })
             .addCase(signOut.fulfilled, state => {
                 state.user = null
                 state.status = 'idle'
+                state.error = null
             })
     },
 })

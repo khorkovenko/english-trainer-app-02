@@ -1,9 +1,10 @@
+// features/loginModal/LoginModal.js
 import { useState } from 'react'
 import { Dialog } from 'primereact/dialog'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import { Button } from 'primereact/button'
-import { supabaseClient } from '../../supabaseClient'
+import { supabaseClient } from '../../app/supabaseClient'
 
 export default function LoginModal({ visible, onHide }) {
     const [email, setEmail] = useState('')
@@ -21,9 +22,7 @@ export default function LoginModal({ visible, onHide }) {
     const handleGoogleLogin = async () => {
         await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
-            options: {
-                redirectTo: window.location.origin,
-            },
+            options: { redirectTo: window.location.origin },
         })
     }
 
@@ -36,23 +35,69 @@ export default function LoginModal({ visible, onHide }) {
     }
 
     return (
-        <Dialog header="Login" visible={visible} onHide={onHide} style={{ width: '25rem' }}>
+        <Dialog
+            header="Login"
+            visible={visible}
+            onHide={onHide}
+            modal
+            dismissableMask
+            closable
+            baseZIndex={10000}
+            style={{ width: '25rem' }}
+        >
             <div className="p-fluid">
-                <label>Email</label>
-                <InputText value={email} onChange={e => setEmail(e.target.value)} />
+                <label htmlFor="email">Email</label>
+                <InputText
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
 
-                <label className="mt-3">Password</label>
-                <Password value={password} onChange={e => setPassword(e.target.value)} toggleMask feedback={false} />
+                <div style={{ height: '10px' }} />
 
-                <div className="mt-3 flex justify-between">
-                    <Button label="Login" icon="pi pi-sign-in" onClick={handleLogin} loading={loading} />
-                    <Button label="Sign Up" icon="pi pi-user-plus" onClick={handleSignUp} loading={loading} />
-                </div>
+                <label htmlFor="password" className="mt-3">Password</label>
+                <Password
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    toggleMask
+                    feedback={false}
+                />
 
-                <div className="mt-4">
-                    <Button label="Login with Google" icon="pi pi-google" severity="danger" onClick={handleGoogleLogin} className="w-full" />
-                </div>
+                <div style={{ height: '10px' }} />
+
+                <Button
+                    label="Login"
+                    icon="pi pi-sign-in"
+                    onClick={handleLogin}
+                    loading={loading}
+                    className="w-full"
+                />
+
+                <div style={{ height: '10px' }} />
+
+                <Button
+                    label="Sign Up"
+                    icon="pi pi-user-plus"
+                    onClick={handleSignUp}
+                    loading={loading}
+                    className="w-full"
+                />
+
+                <div style={{ height: '10px' }} />
+
+                <Button
+                    label="Login with Google"
+                    icon="pi pi-google"
+                    severity="danger"
+                    onClick={handleGoogleLogin}
+                    className="w-full"
+                />
             </div>
+
+
+
+
         </Dialog>
     )
 }

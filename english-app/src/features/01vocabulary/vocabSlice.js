@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { supabaseClient } from '../../supabaseClient';
+import { supabaseClient } from '../../app/supabaseClient';
 
 // Get the currently authenticated user
 export const fetchAuthUser = createAsyncThunk(
