@@ -17,7 +17,6 @@ import {
     deleteAllWords,
 } from './vocabSlice';
 
-// Move FloatingInput outside Vocabulary to avoid redefining on every render
 const FloatingInput = ({ id, label, value, onChange, disabled }) => (
     <span
         className="p-float-label"
