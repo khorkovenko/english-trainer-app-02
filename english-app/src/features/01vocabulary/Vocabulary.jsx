@@ -206,15 +206,17 @@ const Vocabulary = () => {
                 globalFilterFields={['word', 'explanation', 'association']}
                 editMode="row"
                 onRowEditComplete={onRowEditComplete}
-                contextMenuSelection={selectedWord}
-                onContextMenuSelectionChange={(e) => setSelectedWord(e.value)}
-                onContextMenu={(e) => {
-                    setSelectedWord(e.data);
-                    contextMenu.current.show(e.originalEvent);
-                    e.originalEvent.preventDefault();
-                }}
                 tableStyle={{ minWidth: '50rem' }}
                 emptyMessage="No words found."
+                selectionMode={null} // 👈 prevent highlighting
+                onContextMenu={(e) => {
+                    const word = e.data;
+                    if (word && window.confirm(`Delete word "${word.word}"?`)) {
+                        if (user?.id && word.id) {
+                            dispatch(deleteWordById({ userId: user.id, wordId: word.id }));
+                        }
+                    }
+                }}
             >
                 <Column field="word" header="Word" editor={textEditor} sortable />
                 <Column field="explanation" header="Explanation" editor={textEditor} sortable />
@@ -225,6 +227,7 @@ const Vocabulary = () => {
                     bodyStyle={{ textAlign: 'center' }}
                 />
             </DataTable>
+
 
             <ContextMenu model={cmItems} ref={contextMenu} />
         </div>
