@@ -1,4 +1,3 @@
-// src/App.js
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchAuthUser, signOut } from './features/loginModal/authSlice'
@@ -21,11 +20,11 @@ import { supabaseClient } from './app/supabaseClient'
 
 function App() {
     const dispatch = useDispatch()
-    const { user, status, error } = useSelector(state => state.auth)
+    const { user, status } = useSelector(state => state.auth)
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+    const [modalVisible, setModalVisible] = useState(false)
 
-    // Fetch user on mount and listen to auth state changes
     useEffect(() => {
         dispatch(fetchAuthUser())
 
@@ -38,12 +37,19 @@ function App() {
         }
     }, [dispatch])
 
-    // Update on window resize
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768)
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
     }, [])
+
+    useEffect(() => {
+        if (status === 'succeeded' && !user) {
+            setModalVisible(true)
+        } else if (status === 'succeeded' && user) {
+            setModalVisible(false)
+        }
+    }, [user, status])
 
     const menuItems = [
         { label: 'English Trainer', icon: 'pi pi-book' },
@@ -74,8 +80,7 @@ function App() {
                 </div>
             )}
 
-            {/* Login modal shown only when needed */}
-            <LoginModal visible={!user && status === 'succeeded'} />
+            <LoginModal visible={modalVisible} />
 
             {status === 'succeeded' && user && (
                 <>
