@@ -143,7 +143,7 @@ const Vocabulary = () => {
     };
 
     const header = (
-        <div className="p-d-flex p-flex-wrap p-ai-center" style={{ gap: '0.5rem' }}>
+        <div className="p-d-flex p-flex-wrap p-ai-center" style={{ gap: '0.5rem', marginTop: '.75rem'  }}>
             <FloatingInput
                 id="globalSearch"
                 label="Search words"
