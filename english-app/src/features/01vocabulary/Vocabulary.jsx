@@ -16,6 +16,23 @@ import {
     deleteAllWords,
 } from './vocabSlice';
 
+// Move FloatingInput outside Vocabulary to avoid redefining on every render
+const FloatingInput = ({ id, label, value, onChange, disabled }) => (
+    <span
+        className="p-float-label"
+        style={{ flex: '1 1 160px', minWidth: '160px', display: 'inline-flex', flexDirection: 'column' }}
+    >
+        <InputText
+            id={id}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            className="w-full"
+        />
+        <label htmlFor={id}>{label}</label>
+    </span>
+);
+
 const Vocabulary = () => {
     const dispatch = useDispatch();
     const toast = useRef(null);
@@ -126,104 +143,40 @@ const Vocabulary = () => {
     };
 
     const header = (
-        <div
-            className="p-d-flex p-ai-center"
-            style={{
-                gap: '0.75rem',
-                flexWrap: 'nowrap',
-                overflowX: 'auto',
-                paddingTop: '0.5rem',
-                paddingBottom: '0.5rem',
-                flexDirection: 'row'
-            }}
-        >
-            {/* Global search input */}
-            <span className="p-float-label" style={{ flex: '0 0 180px', minWidth: '180px' }}>
-            <InputText
+        <div className="p-d-flex p-flex-wrap p-ai-center" style={{ gap: '0.5rem' }}>
+            <FloatingInput
                 id="globalSearch"
-                type="search"
-                onInput={(e) =>
-                    setFilters({ global: { value: e.target.value, matchMode: 'contains' } })
-                }
-                placeholder=" "
-                className="p-inputtext-sm w-full"
+                label="Search words"
+                value={filters.global?.value || ''}
+                onChange={e => setFilters({ global: { value: e.target.value, matchMode: 'contains' } })}
+                disabled={false}
             />
-            <label htmlFor="globalSearch">Search words</label>
-        </span>
-
-            {/* Word input */}
-            <span className="p-float-label" style={{ flex: '0 0 140px', minWidth: '140px' }}>
-            <InputText
+            <FloatingInput
                 id="newWord"
+                label="Word"
                 value={newWordData.word}
-                onChange={(e) => setNewWordData({ ...newWordData, word: e.target.value })}
+                onChange={e => setNewWordData(prev => ({ ...prev, word: e.target.value }))}
                 disabled={!userLoaded}
             />
-            <label htmlFor="newWord">Word</label>
-        </span>
-
-            {/* Explanation input */}
-            <span className="p-float-label" style={{ flex: '0 0 160px', minWidth: '160px' }}>
-            <InputText
+            <FloatingInput
                 id="newExplanation"
+                label="Explanation"
                 value={newWordData.explanation}
-                onChange={(e) => setNewWordData({ ...newWordData, explanation: e.target.value })}
+                onChange={e => setNewWordData(prev => ({ ...prev, explanation: e.target.value }))}
                 disabled={!userLoaded}
             />
-            <label htmlFor="newExplanation">Explanation</label>
-        </span>
-
-            {/* Association input */}
-            <span className="p-float-label" style={{ flex: '0 0 160px', minWidth: '160px' }}>
-            <InputText
+            <FloatingInput
                 id="newAssociation"
+                label="Association"
                 value={newWordData.association}
-                onChange={(e) => setNewWordData({ ...newWordData, association: e.target.value })}
+                onChange={e => setNewWordData(prev => ({ ...prev, association: e.target.value }))}
                 disabled={!userLoaded}
             />
-            <label htmlFor="newAssociation">Association</label>
-        </span>
-
-            {/* Action buttons */}
-            <div
-                className="p-d-flex p-ai-center"
-                style={{ gap: '0.5rem', flexShrink: 0 }}
-            >
-                <Button
-                    label="Add"
-                    icon="pi pi-plus"
-                    onClick={onAddNewWord}
-                    disabled={!userLoaded}
-                    className="p-button-success"
-                />
-                <Button
-                    label="Clear"
-                    icon="pi pi-times"
-                    onClick={onClearNewWord}
-                    disabled={!userLoaded}
-                    className="p-button-secondary"
-                />
-                <Button
-                    label="Reload"
-                    icon="pi pi-refresh"
-                    onClick={onReloadWords}
-                    disabled={!userLoaded}
-                    className="p-button-info"
-                />
-                <Button
-                    label="Help"
-                    icon="pi pi-question-circle"
-                    onClick={showHelp}
-                    className="p-button-help"
-                />
-                <Button
-                    label="Flush"
-                    icon="pi pi-trash"
-                    onClick={confirmFlushAll}
-                    disabled={!userLoaded}
-                    className="p-button-danger"
-                />
-            </div>
+            <Button label="Add" icon="pi pi-plus" onClick={onAddNewWord} disabled={!userLoaded} className="p-button-success" style={{ flex: '0 0 auto' }} />
+            <Button label="Clear" icon="pi pi-times" onClick={onClearNewWord} disabled={!userLoaded} className="p-button-secondary" style={{ flex: '0 0 auto' }} />
+            <Button label="Reload" icon="pi pi-refresh" onClick={onReloadWords} disabled={!userLoaded} className="p-button-info" style={{ flex: '0 0 auto' }} />
+            <Button label="Help" icon="pi pi-question-circle" onClick={showHelp} className="p-button-help" style={{ flex: '0 0 auto' }} />
+            <Button label="Flush" icon="pi pi-trash" onClick={confirmFlushAll} disabled={!userLoaded} className="p-button-danger" style={{ flex: '0 0 auto' }} />
         </div>
     );
 
