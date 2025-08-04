@@ -7,6 +7,7 @@ import { Toast } from 'primereact/toast';
 import { ContextMenu } from 'primereact/contextmenu';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Button } from 'primereact/button';
+import WordModal from './WordModal';
 
 import {
     fetchAuthUser,
@@ -45,6 +46,8 @@ const Vocabulary = () => {
     const [userLoaded, setUserLoaded] = useState(false);
     const [initialLoadDone, setInitialLoadDone] = useState(false);
     const [newWordData, setNewWordData] = useState({ word: '', explanation: '', association: '' });
+    const [showModal, setShowModal] = useState(false);
+    const [modalWord, setModalWord] = useState(null);
 
     useEffect(() => {
         if (error) {
@@ -208,7 +211,11 @@ const Vocabulary = () => {
                 onRowEditComplete={onRowEditComplete}
                 tableStyle={{ minWidth: '50rem' }}
                 emptyMessage="No words found."
-                selectionMode={null} // 👈 prevent highlighting
+                selectionMode={null}
+                onRowClick={(e) => {
+                    setModalWord(e.data);
+                    setShowModal(true);
+                }}
                 onContextMenu={(e) => {
                     const word = e.data;
                     if (word && window.confirm(`Delete word "${word.word}"?`)) {
@@ -218,7 +225,8 @@ const Vocabulary = () => {
                     }
                 }}
             >
-                <Column field="word" header="Word" editor={textEditor} sortable />
+
+            <Column field="word" header="Word" editor={textEditor} sortable />
                 <Column field="explanation" header="Explanation" editor={textEditor} sortable />
                 <Column field="association" header="Association" editor={textEditor} sortable />
                 <Column
@@ -230,6 +238,13 @@ const Vocabulary = () => {
 
 
             <ContextMenu model={cmItems} ref={contextMenu} />
+
+            <WordModal
+                wordData={modalWord}
+                visible={showModal}
+                onClose={() => setShowModal(false)}
+            />
+
         </div>
     );
 };
