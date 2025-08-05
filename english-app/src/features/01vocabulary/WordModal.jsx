@@ -18,7 +18,7 @@ const WordModal = ({ wordData, onClose, visible }) => {
     const [showFinalSummary, setShowFinalSummary] = useState(false);
     const inputRef = useRef(null);
 
-    const phrase = wordData?.word || '';
+    const phrase = wordData?.word + ' - ' + wordData?.explanation + ' - ' + wordData?.association || '';
 
     const reset = () => {
         setCurrentIndex(0);
@@ -27,28 +27,34 @@ const WordModal = ({ wordData, onClose, visible }) => {
         setMistypedBefore([]);
         setStartTime(null);
         setEndTime(null);
-        inputRef.current?.focus();
+        setShowFinalSummary(false);
     };
 
     const startNewGame = () => {
         reset();
         setCompletedCount(0);
         setSummaryList([]);
-        setShowFinalSummary(false);
     };
 
+    // reset when opened or word changes
     useEffect(() => {
         if (visible) {
             startNewGame();
-            setTimeout(() => inputRef.current?.focus(), 0);
         }
     }, [visible, wordData]);
 
+    // key handling (typing game)
     useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (!visible || !phrase) return;
+        if (!visible || !phrase) return;
 
-            // Prevent typing game if typing in input/checkbox
+        const handleKeyDown = (e) => {
+            // Esc explicitly closes
+            if (e.key === 'Escape') {
+                onClose();
+                return;
+            }
+
+            // Prevent typing game while interacting with inputs (repeat/proMode)
             const activeTag = document.activeElement?.tagName?.toLowerCase();
             if (activeTag === 'input' || activeTag === 'textarea') return;
 
@@ -62,8 +68,7 @@ const WordModal = ({ wordData, onClose, visible }) => {
 
             if (e.key === 'Backspace') {
                 if (currentIndex > 0) {
-                    const newIndex = currentIndex - 1;
-                    setCurrentIndex(newIndex);
+                    setCurrentIndex(prev => prev - 1);
                     setFeedback(prev => prev.slice(0, -1));
                     setColorHistory(prev => prev.slice(0, -1));
                 }
@@ -94,9 +99,10 @@ const WordModal = ({ wordData, onClose, visible }) => {
             setMistypedBefore(newMistypedBefore);
             setFeedback(newFeedback);
             setColorHistory(newColorHistory);
-            setCurrentIndex(currentIndex + 1);
+            setCurrentIndex(prev => prev + 1);
 
             if (proMode && color === 'red') {
+                // immediate reset on mistake in pro mode
                 setTimeout(() => reset(), 100);
                 return;
             }
@@ -105,9 +111,9 @@ const WordModal = ({ wordData, onClose, visible }) => {
                 const now = Date.now();
                 const totalMistakes = newFeedback.filter(f => f.color === 'red' || f.color === 'yellow').length;
                 const accuracy = Math.round(((phrase.length - totalMistakes) / phrase.length) * 100);
-                const timeTaken = ((now - startTime) / 1000).toFixed(2);
+                const timeTaken = ((now - (startTime || now)) / 1000).toFixed(2);
                 const incorrectLetters = newFeedback
-                    .map((f, i) => f.color === 'red' ? `At ${i + 1}: expected '${f.expected}', got '${f.typed}'` : null)
+                    .map((f, i) => (f.color === 'red' ? `At ${i + 1}: expected '${f.expected}', got '${f.typed}'` : null))
                     .filter(Boolean);
                 const allCorrected = newFeedback.every(f => f.color !== 'red');
 
@@ -128,14 +134,25 @@ const WordModal = ({ wordData, onClose, visible }) => {
                     setShowFinalSummary(true);
                 }
 
-
                 setEndTime(now);
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentIndex, feedback, colorHistory, mistypedBefore, startTime, visible, proMode, repeatCount, completedCount]);
+    }, [
+        currentIndex,
+        feedback,
+        colorHistory,
+        mistypedBefore,
+        startTime,
+        visible,
+        proMode,
+        repeatCount,
+        completedCount,
+        phrase,
+        onClose,
+    ]);
 
     const renderLetters = () => {
         return phrase.split('').map((char, index) => {
@@ -169,27 +186,30 @@ const WordModal = ({ wordData, onClose, visible }) => {
         return (
             <div style={{
                 marginTop: '1rem',
-                maxHeight: '250px',
+                maxHeight: '300px',
                 overflowY: 'auto',
-                paddingRight: '0.5rem'
+                paddingRight: '0.5rem',
+                background: '#f9f9f9',
+                borderRadius: 4,
+                padding: '10px',
             }}>
-                <h4>📊 Final Summary ({summaryList.length} rounds)</h4>
-                {summaryList.map((summary, index) => (
+                <h4 style={{ marginTop: 0 }}>📊 Final Summary ({summaryList.length} rounds)</h4>
+                {summaryList.map((s, index) => (
                     <div key={index} style={{ marginBottom: '1rem', borderBottom: '1px solid #ccc', paddingBottom: '0.5rem' }}>
-                        <p><strong>Round:</strong> {summary.repeatNumber}</p>
-                        <p><strong>Time:</strong> {summary.timeTaken} s</p>
-                        <p><strong>Accuracy:</strong> {summary.accuracy}%</p>
-                        {summary.incorrectLetters.length > 0 && (
+                        <p><strong>Round:</strong> {s.repeatNumber}</p>
+                        <p><strong>Time:</strong> {s.timeTaken} s</p>
+                        <p><strong>Accuracy:</strong> {s.accuracy}%</p>
+                        {s.incorrectLetters.length > 0 && (
                             <>
                                 <p><strong>Incorrect Inputs:</strong></p>
                                 <ul>
-                                    {summary.incorrectLetters.map((msg, idx) => (
+                                    {s.incorrectLetters.map((msg, idx) => (
                                         <li key={idx}>{msg}</li>
                                     ))}
                                 </ul>
                             </>
                         )}
-                        {summary.allCorrected
+                        {s.allCorrected
                             ? <p>✅ All mistakes corrected.</p>
                             : <p>❌ Some letters never corrected.</p>}
                     </div>
@@ -217,31 +237,46 @@ const WordModal = ({ wordData, onClose, visible }) => {
                 </div>
             }
             visible={visible}
-            style={{ width: '50vw', minWidth: '300px', maxHeight: '90vh' }}
+            style={{
+                width: '100vw',
+                height: '100vh',
+                minWidth: '100%',
+                padding: 0,
+                margin: 0,
+                maxWidth: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+            }}
+            contentStyle={{ height: 'calc(100% - 60px)', overflow: 'auto', padding: '1rem' }}
             modal
             onHide={onClose}
             closeOnEscape
             dismissableMask
-            breakpoints={{ '960px': '75vw', '640px': '90vw' }}
+            breakpoints={{}}
         >
-            <input ref={inputRef} style={{ opacity: 0, position: 'absolute' }} />
+            {/* Hidden input retained for accessibility if needed */}
+            <input ref={inputRef} style={{ opacity: 0, position: 'absolute' }} aria-hidden="true" />
 
             <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
                 {renderLetters()}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-                <Checkbox inputId="proMode" checked={proMode} onChange={e => setProMode(e.checked)} />
-                <label htmlFor="proMode" style={{ margin: '0 1rem 0 0.5rem' }}>Pro Mode</label>
-
-                <label htmlFor="repeatInput" style={{ marginRight: '0.5rem' }}>Repeat:</label>
-                <InputNumber
-                    id="repeatInput"
-                    value={repeatCount}
-                    onValueChange={(e) => setRepeatCount(e.value || 1)}
-                    min={1}
-                    max={10}
-                />
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <Checkbox inputId="proMode" checked={proMode} onChange={e => setProMode(e.checked)} />
+                    <label htmlFor="proMode" style={{ margin: '0 0.5rem' }}>Pro Mode</label>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <label htmlFor="repeatInput" style={{ marginRight: '0.5rem' }}>Repeat:</label>
+                    <InputNumber
+                        id="repeatInput"
+                        value={repeatCount}
+                        onValueChange={(e) => setRepeatCount(e.value || 1)}
+                        min={1}
+                        max={10}
+                        inputStyle={{ width: '4rem' }}
+                    />
+                </div>
             </div>
 
             <p style={{ whiteSpace: 'pre-wrap' }}>
@@ -250,7 +285,7 @@ const WordModal = ({ wordData, onClose, visible }) => {
 
             {renderFinalSummary()}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', gap: '0.5rem' }}>
                 <Button label="Restart" onClick={startNewGame} />
                 <Button label="Close" onClick={onClose} />
             </div>
