@@ -9,6 +9,7 @@ const WordModal = ({ wordData, onClose, visible }) => {
     const [feedback, setFeedback] = useState([]);
     const [colorHistory, setColorHistory] = useState([]);
     const [mistypedBefore, setMistypedBefore] = useState([]);
+    const [allKeystrokes, setAllKeystrokes] = useState([]); // Track all keystrokes including backspaces
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
     const [proMode, setProMode] = useState(false);
@@ -16,6 +17,7 @@ const WordModal = ({ wordData, onClose, visible }) => {
     const [completedCount, setCompletedCount] = useState(0);
     const [summaryList, setSummaryList] = useState([]);
     const [showFinalSummary, setShowFinalSummary] = useState(false);
+    const [gameStarted, setGameStarted] = useState(false);
     const inputRef = useRef(null);
 
     const phrase = wordData?.word + ' - ' + wordData?.explanation + ' - ' + wordData?.association || '';
@@ -25,36 +27,48 @@ const WordModal = ({ wordData, onClose, visible }) => {
         setFeedback([]);
         setColorHistory([]);
         setMistypedBefore([]);
-        setStartTime(null);
+        setAllKeystrokes([]);
+        setStartTime(Date.now());
         setEndTime(null);
         setShowFinalSummary(false);
+        setGameStarted(true);
     };
 
     const startNewGame = () => {
-        reset();
+        setCurrentIndex(0);
+        setFeedback([]);
+        setColorHistory([]);
+        setMistypedBefore([]);
+        setAllKeystrokes([]);
+        setStartTime(Date.now());
+        setEndTime(null);
         setCompletedCount(0);
         setSummaryList([]);
+        setShowFinalSummary(false);
+        setGameStarted(true);
     };
 
-    // reset when opened or word changes
     useEffect(() => {
-        if (visible) {
+        if (visible && wordData) {
             startNewGame();
+            setTimeout(() => {
+                const dialogContent = document.querySelector('[role="dialog"]');
+                if (dialogContent) {
+                    dialogContent.focus();
+                }
+            }, 100);
         }
     }, [visible, wordData]);
 
-    // key handling (typing game)
     useEffect(() => {
-        if (!visible || !phrase) return;
+        if (!visible || !phrase || !gameStarted) return;
 
         const handleKeyDown = (e) => {
-            // Esc explicitly closes
             if (e.key === 'Escape') {
                 onClose();
                 return;
             }
 
-            // Prevent typing game while interacting with inputs (repeat/proMode)
             const activeTag = document.activeElement?.tagName?.toLowerCase();
             if (activeTag === 'input' || activeTag === 'textarea') return;
 
@@ -64,7 +78,10 @@ const WordModal = ({ wordData, onClose, visible }) => {
                 return;
             }
 
-            if (!startTime) setStartTime(Date.now());
+            setAllKeystrokes(prev => [...prev, {
+                key: e.key,
+                timestamp: Date.now()
+            }]);
 
             if (e.key === 'Backspace') {
                 if (currentIndex > 0) {
@@ -102,7 +119,6 @@ const WordModal = ({ wordData, onClose, visible }) => {
             setCurrentIndex(prev => prev + 1);
 
             if (proMode && color === 'red') {
-                // immediate reset on mistake in pro mode
                 setTimeout(() => reset(), 100);
                 return;
             }
@@ -112,15 +128,52 @@ const WordModal = ({ wordData, onClose, visible }) => {
                 const totalMistakes = newFeedback.filter(f => f.color === 'red' || f.color === 'yellow').length;
                 const accuracy = Math.round(((phrase.length - totalMistakes) / phrase.length) * 100);
                 const timeTaken = ((now - (startTime || now)) / 1000).toFixed(2);
-                const incorrectLetters = newFeedback
-                    .map((f, i) => (f.color === 'red' ? `At ${i + 1}: expected '${f.expected}', got '${f.typed}'` : null))
-                    .filter(Boolean);
+
+                const mistakePositions = newFeedback
+                    .map((f, i) => (f.color === 'red' || f.color === 'yellow') ? i : null)
+                    .filter(pos => pos !== null);
+
+                const mistakeDetails = mistakePositions.map(pos => {
+                    const expectedChar = phrase[pos];
+                    const finalColor = newFeedback[pos].color;
+
+                    const relevantKeystrokes = [];
+                    let tempPosition = 0;
+
+                    for (const keystroke of allKeystrokes) {
+                        if (keystroke.key === 'Backspace') {
+                            if (tempPosition > 0) {
+                                tempPosition--;
+                                if (tempPosition === pos) {
+                                    relevantKeystrokes.push('⌫');
+                                }
+                            }
+                        } else if (keystroke.key.length === 1) {
+                            if (tempPosition === pos) {
+                                const displayChar = keystroke.key === ' ' ? '␣' : keystroke.key;
+                                relevantKeystrokes.push(displayChar);
+                            }
+                            tempPosition++;
+                        }
+                    }
+
+                    const keystrokeSequence = relevantKeystrokes.join('•') || expectedChar;
+
+                    return {
+                        position: pos + 1,
+                        expected: expectedChar === ' ' ? 'space' : expectedChar,
+                        sequence: keystrokeSequence,
+                        finalColor: finalColor,
+                        corrected: finalColor === 'yellow'
+                    };
+                });
+
                 const allCorrected = newFeedback.every(f => f.color !== 'red');
 
                 const roundSummary = {
                     accuracy,
                     timeTaken,
-                    incorrectLetters,
+                    mistakeDetails,
                     allCorrected,
                     repeatNumber: completedCount + 1,
                 };
@@ -132,6 +185,7 @@ const WordModal = ({ wordData, onClose, visible }) => {
                     reset();
                 } else {
                     setShowFinalSummary(true);
+                    setGameStarted(false);
                 }
 
                 setEndTime(now);
@@ -145,12 +199,14 @@ const WordModal = ({ wordData, onClose, visible }) => {
         feedback,
         colorHistory,
         mistypedBefore,
+        allKeystrokes,
         startTime,
         visible,
         proMode,
         repeatCount,
         completedCount,
         phrase,
+        gameStarted,
         onClose,
     ]);
 
@@ -199,19 +255,26 @@ const WordModal = ({ wordData, onClose, visible }) => {
                         <p><strong>Round:</strong> {s.repeatNumber}</p>
                         <p><strong>Time:</strong> {s.timeTaken} s</p>
                         <p><strong>Accuracy:</strong> {s.accuracy}%</p>
-                        {s.incorrectLetters.length > 0 && (
+                        {s.mistakeDetails.length > 0 && (
                             <>
-                                <p><strong>Incorrect Inputs:</strong></p>
+                                <p><strong>Mistakes:</strong></p>
                                 <ul>
-                                    {s.incorrectLetters.map((msg, idx) => (
-                                        <li key={idx}>{msg}</li>
+                                    {s.mistakeDetails.map((mistake, idx) => (
+                                        <li key={idx} style={{ marginBottom: '4px' }}>
+                                            <span>Position {mistake.position}: expected '{mistake.expected}' → {mistake.sequence}</span>
+                                            {mistake.corrected ? (
+                                                <span style={{ color: 'orange', marginLeft: '8px' }}>✓ Corrected</span>
+                                            ) : (
+                                                <span style={{ color: 'red', marginLeft: '8px' }}>✗ Not corrected</span>
+                                            )}
+                                        </li>
                                     ))}
                                 </ul>
                             </>
                         )}
                         {s.allCorrected
-                            ? <p>✅ All mistakes corrected.</p>
-                            : <p>❌ Some letters never corrected.</p>}
+                            ? <p>✅ All mistakes were corrected.</p>
+                            : <p>❌ Some mistakes were never corrected.</p>}
                     </div>
                 ))}
             </div>
@@ -253,8 +316,8 @@ const WordModal = ({ wordData, onClose, visible }) => {
             closeOnEscape
             dismissableMask
             breakpoints={{}}
+            tabIndex={0}
         >
-            {/* Hidden input retained for accessibility if needed */}
             <input ref={inputRef} style={{ opacity: 0, position: 'absolute' }} aria-hidden="true" />
 
             <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
