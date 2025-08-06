@@ -25,6 +25,12 @@ function App() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
     const [modalVisible, setModalVisible] = useState(false)
 
+    // New: track selected tab index
+    const [selectedIndex, setSelectedIndex] = useState(() => {
+        const stored = localStorage.getItem('selectedTabIndex')
+        return stored !== null ? parseInt(stored, 10) : 0
+    })
+
     useEffect(() => {
         dispatch(fetchAuthUser())
 
@@ -72,6 +78,12 @@ function App() {
         { header: 'Mistakes', content: <Mistakes /> },
     ]
 
+    // New: handle tab change and store it
+    const handleTabChange = (e) => {
+        setSelectedIndex(e.index)
+        localStorage.setItem('selectedTabIndex', e.index)
+    }
+
     return (
         <div className="h-screen flex flex-col">
             {status === 'loading' && (
@@ -87,15 +99,15 @@ function App() {
                     <Menubar model={menuItems} />
                     <div className="p-4 flex-grow overflow-auto">
                         {isMobile ? (
-                            <Accordion multiple>
-                                {tabs.map(({ header, content }) => (
+                            <Accordion multiple activeIndex={[selectedIndex]} onTabChange={(e) => handleTabChange({ index: e.index[0] })}>
+                                {tabs.map(({ header, content }, i) => (
                                     <AccordionTab key={header} header={header}>
                                         {content}
                                     </AccordionTab>
                                 ))}
                             </Accordion>
                         ) : (
-                            <TabView>
+                            <TabView activeIndex={selectedIndex} onTabChange={handleTabChange}>
                                 {tabs.map(({ header, content }) => (
                                     <TabPanel key={header} header={header}>
                                         {content}
