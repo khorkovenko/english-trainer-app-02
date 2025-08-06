@@ -7,3 +7,12 @@ create table words (
                        created_at timestamp with time zone default now(),
                        updated_at timestamp with time zone default now()
 );
+
+create table grammar (
+                         id uuid primary key default uuid_generate_v4(),
+                         user_id uuid references auth.users(id) on delete cascade,
+                         rule_name varchar(255) not null,
+                         html_explanation text not null,
+                         created_at timestamp with time zone default timezone('utc', now()),
+                         updated_at timestamp with time zone default timezone('utc', now())
+);
