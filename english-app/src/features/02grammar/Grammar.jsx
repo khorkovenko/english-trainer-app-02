@@ -14,6 +14,7 @@ import {
     saveGrammarRule,
     deleteGrammarRule
 } from './grammarSlice';
+import {SplitButton} from "primereact/splitbutton";
 
 const Grammar = () => {
     const dispatch = useDispatch();
@@ -78,6 +79,48 @@ const Grammar = () => {
         dispatch(saveGrammarRule({ userId: user.id, rule: newData }));
     };
 
+    function stripHtml(html) {
+        if (!html) return '';
+        return html.replace(/<[^>]*>?/gm, '').trim();
+    }
+
+    const items = [
+        {
+            label: 'Create Dialogue',
+            icon: 'pi pi-comments',
+            command: () => {
+                const ruleName = selectedRule?.rule_name?.trim() || '';
+                const explanation = stripHtml(selectedRule?.html_explanation);
+                const chatPrompt = `Create a dialogue using this grammar rule: ${ruleName} with explanation: ${explanation}`;
+                const encodedPrompt = encodeURIComponent(chatPrompt);
+                window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
+            }
+        },
+        {
+            label: 'Generate Quiz (Choose Answer)',
+            icon: 'pi pi-question-circle',
+            command: () => {
+                const ruleName = selectedRule?.rule_name?.trim() || '';
+                const explanation = stripHtml(selectedRule?.html_explanation);
+                const chatPrompt = `Generate a multiple-choice quiz based on this grammar rule: ${ruleName} with explanation: ${explanation}`;
+                const encodedPrompt = encodeURIComponent(chatPrompt);
+                window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
+            }
+        },
+        {
+            label: 'Generate Quiz (Write Answer)',
+            icon: 'pi pi-pencil',
+            command: () => {
+                const ruleName = selectedRule?.rule_name?.trim() || '';
+                const explanation = stripHtml(selectedRule?.html_explanation);
+                const chatPrompt = `Generate a fill-in-the-blank quiz based on this grammar rule: ${ruleName} with explanation: ${explanation}`;
+                const encodedPrompt = encodeURIComponent(chatPrompt);
+                window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
+            }
+        }
+    ];
+
+
     return (
         <div className="p-4">
             <Toast ref={toast} />
@@ -132,19 +175,20 @@ const Grammar = () => {
                 <Column
                     body={(row) => (
                         <div className="flex gap-2">
-                            <Button
-                                icon="pi pi-eye"
-                                className="p-button-info p-button-sm"
-                                onClick={() => {
-                                    setSelectedRule(row);
-                                    setShowHtmlModal(true);
-                                }}
+
+                            <SplitButton icon="pi pi-eye"
+                                         onClick={() => {
+                                             setSelectedRule(row);
+                                             setShowHtmlModal(true);
+                                         }}
+                                         model={items} severity="info"
                             />
                             <Button
                                 icon="pi pi-trash"
                                 className="p-button-danger p-button-sm"
                                 onClick={() => handleDelete(row)}
                             />
+
                         </div>
                     )}
                     header="Actions"
