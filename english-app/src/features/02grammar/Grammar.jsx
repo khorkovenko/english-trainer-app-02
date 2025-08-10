@@ -19,7 +19,7 @@ const Grammar = () => {
     const dispatch = useDispatch();
     const toast = useRef(null);
 
-    const { user } = useSelector(state => state.vocab); // re-use from vocab slice
+    const { user } = useSelector(state => state.auth);
     const { rules, loading, error } = useSelector(state => state.grammar);
 
     const [newRule, setNewRule] = useState({ rule_name: '', html_explanation: '' });
