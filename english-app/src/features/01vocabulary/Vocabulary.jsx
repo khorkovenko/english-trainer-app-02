@@ -44,9 +44,16 @@ const Vocabulary = () => {
     const [selectedWord, setSelectedWord] = useState(null);
     const [userLoaded, setUserLoaded] = useState(false);
     const [initialLoadDone, setInitialLoadDone] = useState(false);
-    const [newWordData, setNewWordData] = useState({ word: '', explanation: '', association: '' });
+    const [newWordData, setNewWordData] = useState(() => {
+        const saved = localStorage.getItem('newWordData');
+        return saved ? JSON.parse(saved) : { word: '', explanation: '', association: '' };
+    });
     const [showModal, setShowModal] = useState(false);
     const [modalWord, setModalWord] = useState(null);
+
+    useEffect(() => {
+        localStorage.setItem('newWordData', JSON.stringify(newWordData));
+    }, [newWordData]);
 
     useEffect(() => {
         if (error) {
@@ -145,42 +152,99 @@ const Vocabulary = () => {
     };
 
     const header = (
-        <div className="p-d-flex p-flex-wrap p-ai-center" style={{ gap: '0.5rem', marginTop: '.75rem'  }}>
+        <div
+            className="p-d-flex p-ai-center p-flex-wrap"
+            style={{gap: '0.5rem', flex: '1 1 600px', minWidth: '300px'}}
+        >
             <FloatingInput
                 id="globalSearch"
                 label="Search words"
                 value={filters.global?.value || ''}
-                onChange={e => setFilters({ global: { value: e.target.value, matchMode: 'contains' } })}
-                disabled={false}
+                onChange={e =>
+                    setFilters({global: {value: e.target.value, matchMode: 'contains'}})
+                }
+                disabled={!userLoaded}
+                style={{flex: '1 1 140px', minWidth: '140px'}}
             />
+            <span
+                style={{
+                    color: 'var(--primary-color)',
+                    fontWeight: 'bold',
+                    fontSize: '1.5rem',
+                    margin: '0 12px',
+                    userSelect: 'none',
+                    flexShrink: 0,
+                }}
+            >
+                ||
+            </span>
             <FloatingInput
                 id="newWord"
                 label="Word"
                 value={newWordData.word}
-                onChange={e => setNewWordData({ ...newWordData, word: e.target.value })}
+                onChange={e => setNewWordData({...newWordData, word: e.target.value})}
                 disabled={!userLoaded}
+                style={{flex: '1 1 140px', minWidth: '140px'}}
             />
             <FloatingInput
                 id="newExplanation"
                 label="Explanation"
                 value={newWordData.explanation}
-                onChange={e => setNewWordData({ ...newWordData, explanation: e.target.value })}
+                onChange={e => setNewWordData({...newWordData, explanation: e.target.value})}
                 disabled={!userLoaded}
+                style={{flex: '1 1 160px', minWidth: '160px'}}
             />
             <FloatingInput
                 id="newAssociation"
                 label="Association"
                 value={newWordData.association}
-                onChange={e => setNewWordData({ ...newWordData, association: e.target.value })}
+                onChange={e => setNewWordData({...newWordData, association: e.target.value})}
                 disabled={!userLoaded}
+                style={{flex: '1 1 140px', minWidth: '140px'}}
             />
-            <Button label="Add" icon="pi pi-plus" onClick={onAddNewWord} disabled={!userLoaded} className="p-button-success" style={{ flex: '0 0 auto' }} />
-            <Button label="Clear" icon="pi pi-times" onClick={onClearNewWord} disabled={!userLoaded} className="p-button-secondary" style={{ flex: '0 0 auto' }} />
-            <Button label="Reload" icon="pi pi-refresh" onClick={onReloadWords} disabled={!userLoaded} className="p-button-info" style={{ flex: '0 0 auto' }} />
-            <Button label="Help" icon="pi pi-question-circle" onClick={showHelp} className="p-button-help" style={{ flex: '0 0 auto' }} />
-            <Button label="Flush" icon="pi pi-trash" onClick={confirmFlushAll} disabled={!userLoaded} className="p-button-danger" style={{ flex: '0 0 auto' }} />
+            <Button
+                label="Add"
+                icon="pi pi-plus"
+                onClick={onAddNewWord}
+                disabled={!userLoaded}
+                className="p-button-success"
+                style={{flex: '0 0 auto'}}
+            />
+            <Button
+                label="Clear"
+                icon="pi pi-times"
+                onClick={onClearNewWord}
+                disabled={!userLoaded}
+                className="p-button-secondary"
+                style={{flex: '0 0 auto'}}
+            />
+            <Button
+                label="Reload"
+                icon="pi pi-refresh"
+                onClick={onReloadWords}
+                disabled={!userLoaded}
+                className="p-button-info"
+                style={{flex: '0 0 auto'}}
+            />
+            <Button
+                label="Help"
+                icon="pi pi-question-circle"
+                onClick={showHelp}
+                className="p-button-help"
+                style={{flex: '0 0 auto'}}
+            />
+            <Button
+                label="Flush"
+                icon="pi pi-trash"
+                onClick={confirmFlushAll}
+                disabled={!userLoaded}
+                className="p-button-danger"
+                style={{flex: '0 0 auto'}}
+            />
         </div>
     );
+
+
 
     const cmItems = [
         {
@@ -224,8 +288,7 @@ const Vocabulary = () => {
                     }
                 }}
             >
-
-            <Column field="word" header="Word" editor={textEditor} sortable />
+                <Column field="word" header="Word" editor={textEditor} sortable />
                 <Column field="explanation" header="Explanation" editor={textEditor} sortable />
                 <Column field="association" header="Association" editor={textEditor} sortable />
                 <Column
@@ -235,7 +298,6 @@ const Vocabulary = () => {
                 />
             </DataTable>
 
-
             <ContextMenu model={cmItems} ref={contextMenu} />
 
             <WordModal
@@ -243,7 +305,6 @@ const Vocabulary = () => {
                 visible={showModal}
                 onClose={() => setShowModal(false)}
             />
-
         </div>
     );
 };
