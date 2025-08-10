@@ -22,6 +22,7 @@ const Grammar = () => {
     const { user } = useSelector(state => state.auth);
     const { rules, loading, error } = useSelector(state => state.grammar);
 
+    // Initial state for newRule
     const [newRule, setNewRule] = useState({ rule_name: '', html_explanation: '' });
     const [selectedRule, setSelectedRule] = useState(null);
     const [showHtmlModal, setShowHtmlModal] = useState(false);
@@ -37,7 +38,7 @@ const Grammar = () => {
     }, [dispatch, user]);
 
     useEffect(() => {
-        if (error) {
+        if (error && toast.current) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: error, life: 4000 });
         }
     }, [error]);
@@ -89,7 +90,8 @@ const Grammar = () => {
                     <InputText
                         id="rule_name"
                         value={newRule.rule_name}
-                        onChange={e => setNewRule(prev => ({ ...prev, rule_name: e.target.value }))}
+                        // Use direct object update instead of function callback
+                        onChange={e => setNewRule({ ...newRule, rule_name: e.target.value })}
                         className="w-64"
                     />
                     <label htmlFor="rule_name">Rule Name</label>
@@ -98,7 +100,7 @@ const Grammar = () => {
                     <InputText
                         id="html_explanation"
                         value={newRule.html_explanation}
-                        onChange={e => setNewRule(prev => ({ ...prev, html_explanation: e.target.value }))}
+                        onChange={e => setNewRule({ ...newRule, html_explanation: e.target.value })}
                         className="w-96"
                     />
                     <label htmlFor="html_explanation">HTML Explanation</label>
