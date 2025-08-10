@@ -20,7 +20,18 @@ const WordModal = ({ wordData, onClose, visible }) => {
     const [gameStarted, setGameStarted] = useState(false);
     const inputRef = useRef(null);
 
-    const phrase = wordData?.word + ' - ' + wordData?.explanation + ' - ' + wordData?.association || '';
+    const capitalizedWord = wordData?.word
+        ? wordData.word.charAt(0).toUpperCase() + wordData.word.slice(1)
+        : '';
+    console.log(capitalizedWord);
+
+    const rawPhrase = [wordData?.word, wordData?.explanation, wordData?.association]
+        .filter(Boolean)
+        .join(' - ')
+        .trim();
+
+    const phrase = rawPhrase.charAt(0).toUpperCase() + rawPhrase.slice(1);
+
 
     const reset = () => {
         setCurrentIndex(0);
@@ -211,6 +222,13 @@ const WordModal = ({ wordData, onClose, visible }) => {
     ]);
 
     const renderLetters = () => {
+        const baseWidth = 1.2;
+        const baseHeight = 1.8;
+        const scale = 1.7;
+        const width = baseWidth * scale;
+        const height = baseHeight * scale;
+        const lineHeight = height;
+
         return phrase.split('').map((char, index) => {
             const isCurrent = index === currentIndex;
             const color = colorHistory[index];
@@ -220,21 +238,34 @@ const WordModal = ({ wordData, onClose, visible }) => {
                         color === 'yellow' ? '#ffff99' :
                             isCurrent ? '#e0e0e0' : 'transparent';
 
+            const displayChar = char === ' ' ? '_' : char;
+
             return (
                 <span
                     key={index}
                     style={{
+                        display: 'inline-block',
+                        width: `${width}rem`,
+                        height: `${height}rem`,
+                        lineHeight: `${lineHeight}rem`,
+                        textAlign: 'center',
+                        fontFamily: 'monospace',
                         backgroundColor: bg,
                         textDecoration: isCurrent ? 'underline' : 'none',
                         fontWeight: isCurrent ? 'bold' : 'normal',
-                        padding: '0 2px',
+                        marginRight: '0.1rem',
+                        userSelect: 'none',
+                        borderRadius: '3px',
+                        color: char === ' ' ? '#aaa' : 'inherit',
                     }}
                 >
-                    {char}
-                </span>
+                {displayChar}
+            </span>
             );
         });
     };
+
+
 
     const renderFinalSummary = () => {
         if (!showFinalSummary || summaryList.length === 0) return null;
@@ -342,9 +373,6 @@ const WordModal = ({ wordData, onClose, visible }) => {
                 </div>
             </div>
 
-            <p style={{ whiteSpace: 'pre-wrap' }}>
-                {(wordData.explanation || '') + ' - ' + (wordData.association || '')}
-            </p>
 
             {renderFinalSummary()}
 
