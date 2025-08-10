@@ -8,26 +8,15 @@ import { Toast } from 'primereact/toast';
 import { Dialog } from 'primereact/dialog';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { fetchAuthUser } from '../loginModal/authSlice';
-
-import {
-    fetchGrammarRules,
-    saveGrammarRule,
-    deleteGrammarRule
-} from './grammarSlice';
-import { SplitButton } from "primereact/splitbutton";
+import { fetchGrammarRules, saveGrammarRule, deleteGrammarRule } from './grammarSlice';
+import { SplitButton } from 'primereact/splitbutton';
 
 const FloatingInput = ({ id, label, value, onChange, disabled }) => (
     <span
         className="p-float-label"
         style={{ flex: '1 1 200px', minWidth: '200px', display: 'inline-flex', flexDirection: 'column' }}
     >
-        <InputText
-            id={id}
-            value={value}
-            onChange={onChange}
-            disabled={disabled}
-            className="w-full"
-        />
+        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
         <label htmlFor={id}>{label}</label>
     </span>
 );
@@ -35,15 +24,17 @@ const FloatingInput = ({ id, label, value, onChange, disabled }) => (
 const Grammar = () => {
     const dispatch = useDispatch();
     const toast = useRef(null);
-
     const { user } = useSelector(state => state.auth);
     const { rules, loading, error } = useSelector(state => state.grammar);
-
-    const [newRule, setNewRule] = useState({ rule_name: '', html_explanation: '' });
+    const [newRule, setNewRule] = useState(() => {
+        const saved = localStorage.getItem('newRuleData');
+        return saved ? JSON.parse(saved) : { rule_name: '', html_explanation: '' };
+    });
     const [selectedRule, setSelectedRule] = useState(null);
     const [showHtmlModal, setShowHtmlModal] = useState(false);
-
     const [filters, setFilters] = useState({ global: { value: null, matchMode: 'contains' } });
+
+    useEffect(() => localStorage.setItem('newRuleData', JSON.stringify(newRule)), [newRule]);
 
     useEffect(() => {
         if (!user?.id) {
@@ -67,9 +58,15 @@ const Grammar = () => {
             return;
         }
         if (!user?.id) return;
-
         dispatch(saveGrammarRule({ userId: user.id, rule: newRule }));
         setNewRule({ rule_name: '', html_explanation: '' });
+        localStorage.removeItem('newRuleData');
+    };
+
+    const handleClear = () => {
+        setNewRule({ rule_name: '', html_explanation: '' });
+        setFilters({ global: { value: null, matchMode: 'contains' } });
+        localStorage.removeItem('newRuleData');
     };
 
     const handleDelete = (rule) => {
@@ -85,10 +82,7 @@ const Grammar = () => {
     };
 
     const textEditor = (options) => (
-        <InputText
-            value={options.value}
-            onChange={(e) => options.editorCallback(e.target.value)}
-        />
+        <InputText value={options.value} onChange={(e) => options.editorCallback(e.target.value)} />
     );
 
     const onRowEditComplete = (e) => {
@@ -104,7 +98,6 @@ const Grammar = () => {
     const getItems = (rule) => {
         const ruleName = rule?.rule_name?.trim() || '';
         const explanation = stripHtml(rule?.html_explanation);
-
         return [
             {
                 label: 'Create Dialogue',
@@ -134,6 +127,28 @@ const Grammar = () => {
                 }
             }
         ];
+    };
+
+    const showHelp = () => {
+        const name = newRule.rule_name.trim();
+        const explanation = stripHtml(newRule.html_explanation);
+        if (name) {
+            const promptText = `Create an adaptive HTML table explaining the grammar rule: "${name}," with sample usages. 
+            All explanation and content must be in HTML only, wrapped in a single outer <div> tag. 
+            All styles must be inline (using the style attribute directly in HTML). 
+            Do not use any CSS classes or external stylesheets. 
+            The layout should be responsive and readable on all screen sizes.`;
+            const prompt = encodeURIComponent(promptText);
+            const url = `https://chat.openai.com/?model=gpt-4&prompt=${prompt}`;
+            window.open(url, '_blank');
+        } else {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Empty rule name!',
+                detail: 'Enter a rule name before requesting AI help.',
+                life: 7000,
+            });
+        }
     };
 
     const header = (
@@ -169,7 +184,8 @@ const Grammar = () => {
                 onChange={e => setNewRule({ ...newRule, html_explanation: e.target.value })}
             />
             <Button label="Add" icon="pi pi-plus" onClick={handleAddRule} className="p-button-success" />
-            <Button label="Clear" icon="pi pi-times" onClick={() => setNewRule({ rule_name: '', html_explanation: '' })} className="p-button-secondary" />
+            <Button label="Clear" icon="pi pi-times" onClick={handleClear} className="p-button-secondary" />
+            <Button label="Help" icon="pi pi-question-circle" onClick={showHelp} className="p-button-help" />
         </div>
     );
 
@@ -177,9 +193,7 @@ const Grammar = () => {
         <div className="p-4">
             <Toast ref={toast} />
             <ConfirmDialog />
-
             <h2 className="text-xl font-semibold mb-4">📘 Grammar Practice</h2>
-
             <DataTable
                 value={rules}
                 dataKey="id"
@@ -210,19 +224,13 @@ const Grammar = () => {
                                 model={getItems(row)}
                                 severity="info"
                             />
-
-                            <Button
-                                icon="pi pi-trash"
-                                className="p-button-danger p-button-sm"
-                                onClick={() => handleDelete(row)}
-                            />
+                            <Button icon="pi pi-trash" className="p-button-danger p-button-sm" onClick={() => handleDelete(row)} />
                         </div>
                     )}
                     header="Actions"
                 />
                 <Column rowEditor header="Edit" />
             </DataTable>
-
             <Dialog
                 visible={showHtmlModal}
                 onHide={() => setShowHtmlModal(false)}
