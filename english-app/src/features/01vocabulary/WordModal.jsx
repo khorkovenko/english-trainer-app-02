@@ -25,14 +25,26 @@ const WordModal = ({ wordData, onClose, visible }) => {
     const clickSound = useRef(new Audio(clickSoundFile));
     const failSound = useRef(new Audio(failSoundFile));
 
+    const isValidUrl = (str) => {
+        try {
+            const url = new URL(str);
+            return url.protocol === "http:" || url.protocol === "https:";
+        } catch {
+            return false;
+        }
+    };
+
     const capitalizedWord = wordData?.word
         ? wordData.word.charAt(0).toUpperCase() + wordData.word.slice(1)
         : '';
 
-    const rawPhrase = [wordData?.word, wordData?.explanation, wordData?.association]
-        .filter(Boolean)
-        .join(' - ')
-        .trim();
+    const parts = [wordData?.word, wordData?.explanation];
+
+    if (wordData?.association && !isValidUrl(wordData.association)) {
+        parts.push(wordData.association);
+    }
+
+    const rawPhrase = parts.filter(Boolean).join(' - ').trim();
 
     const phrase = rawPhrase.charAt(0).toUpperCase() + rawPhrase.slice(1);
 
