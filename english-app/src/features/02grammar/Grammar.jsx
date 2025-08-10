@@ -14,7 +14,23 @@ import {
     saveGrammarRule,
     deleteGrammarRule
 } from './grammarSlice';
-import {SplitButton} from "primereact/splitbutton";
+import { SplitButton } from "primereact/splitbutton";
+
+const FloatingInput = ({ id, label, value, onChange, disabled }) => (
+    <span
+        className="p-float-label"
+        style={{ flex: '1 1 200px', minWidth: '200px', display: 'inline-flex', flexDirection: 'column' }}
+    >
+        <InputText
+            id={id}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            className="w-full"
+        />
+        <label htmlFor={id}>{label}</label>
+    </span>
+);
 
 const Grammar = () => {
     const dispatch = useDispatch();
@@ -23,10 +39,11 @@ const Grammar = () => {
     const { user } = useSelector(state => state.auth);
     const { rules, loading, error } = useSelector(state => state.grammar);
 
-    // Initial state for newRule
     const [newRule, setNewRule] = useState({ rule_name: '', html_explanation: '' });
     const [selectedRule, setSelectedRule] = useState(null);
     const [showHtmlModal, setShowHtmlModal] = useState(false);
+
+    const [filters, setFilters] = useState({ global: { value: null, matchMode: 'contains' } });
 
     useEffect(() => {
         if (!user?.id) {
@@ -119,41 +136,37 @@ const Grammar = () => {
         ];
     };
 
+    const header = (
+        <div className="p-d-flex p-flex-wrap p-ai-center" style={{ gap: '0.5rem', marginTop: '.75rem' }}>
+            <FloatingInput
+                id="globalSearch"
+                label="Search rules"
+                value={filters.global?.value || ''}
+                onChange={e => setFilters({ global: { value: e.target.value, matchMode: 'contains' } })}
+            />
+            <FloatingInput
+                id="rule_name"
+                label="Rule Name"
+                value={newRule.rule_name}
+                onChange={e => setNewRule({ ...newRule, rule_name: e.target.value })}
+            />
+            <FloatingInput
+                id="html_explanation"
+                label="HTML Explanation"
+                value={newRule.html_explanation}
+                onChange={e => setNewRule({ ...newRule, html_explanation: e.target.value })}
+            />
+            <Button label="Add" icon="pi pi-plus" onClick={handleAddRule} className="p-button-success" />
+            <Button label="Clear" icon="pi pi-times" onClick={() => setNewRule({ rule_name: '', html_explanation: '' })} className="p-button-secondary" />
+        </div>
+    );
+
     return (
         <div className="p-4">
             <Toast ref={toast} />
             <ConfirmDialog />
 
             <h2 className="text-xl font-semibold mb-4">📘 Grammar Practice</h2>
-
-            <div className="flex flex-wrap gap-2 mb-3">
-                <span className="p-float-label">
-                    <InputText
-                        id="rule_name"
-                        value={newRule.rule_name}
-                        // Use direct object update instead of function callback
-                        onChange={e => setNewRule({ ...newRule, rule_name: e.target.value })}
-                        className="w-64"
-                    />
-                    <label htmlFor="rule_name">Rule Name</label>
-                </span>
-                <span className="p-float-label">
-                    <InputText
-                        id="html_explanation"
-                        value={newRule.html_explanation}
-                        onChange={e => setNewRule({ ...newRule, html_explanation: e.target.value })}
-                        className="w-96"
-                    />
-                    <label htmlFor="html_explanation">HTML Explanation</label>
-                </span>
-                <Button label="Add" icon="pi pi-plus" onClick={handleAddRule} className="p-button-success" />
-                <Button
-                    label="Clear"
-                    icon="pi pi-times"
-                    className="p-button-secondary"
-                    onClick={() => setNewRule({ rule_name: '', html_explanation: '' })}
-                />
-            </div>
 
             <DataTable
                 value={rules}
@@ -162,6 +175,9 @@ const Grammar = () => {
                 onRowEditComplete={onRowEditComplete}
                 tableStyle={{ minWidth: '60rem' }}
                 emptyMessage="No grammar rules yet."
+                header={header}
+                filters={filters}
+                globalFilterFields={['rule_name', 'html_explanation']}
             >
                 <Column field="rule_name" header="Rule Name" editor={textEditor} sortable />
                 <Column
@@ -173,7 +189,6 @@ const Grammar = () => {
                 <Column
                     body={(row) => (
                         <div className="flex gap-2">
-
                             <SplitButton
                                 icon="pi pi-eye"
                                 onClick={() => {
@@ -189,7 +204,6 @@ const Grammar = () => {
                                 className="p-button-danger p-button-sm"
                                 onClick={() => handleDelete(row)}
                             />
-
                         </div>
                     )}
                     header="Actions"

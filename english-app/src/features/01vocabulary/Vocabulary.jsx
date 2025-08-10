@@ -38,7 +38,7 @@ const Vocabulary = () => {
     const toast = useRef(null);
     const contextMenu = useRef(null);
 
-    const { user, words, loading, error } = useSelector((state) => state.vocab || {});
+    const { user, words = [], loading, error } = useSelector(state => state.vocab || {});
 
     const [filters, setFilters] = useState({ global: { value: null, matchMode: 'contains' } });
     const [selectedWord, setSelectedWord] = useState(null);
@@ -157,21 +157,21 @@ const Vocabulary = () => {
                 id="newWord"
                 label="Word"
                 value={newWordData.word}
-                onChange={e => setNewWordData(prev => ({ ...prev, word: e.target.value }))}
+                onChange={e => setNewWordData({ ...newWordData, word: e.target.value })}
                 disabled={!userLoaded}
             />
             <FloatingInput
                 id="newExplanation"
                 label="Explanation"
                 value={newWordData.explanation}
-                onChange={e => setNewWordData(prev => ({ ...prev, explanation: e.target.value }))}
+                onChange={e => setNewWordData({ ...newWordData, explanation: e.target.value })}
                 disabled={!userLoaded}
             />
             <FloatingInput
                 id="newAssociation"
                 label="Association"
                 value={newWordData.association}
-                onChange={e => setNewWordData(prev => ({ ...prev, association: e.target.value }))}
+                onChange={e => setNewWordData({ ...newWordData, association: e.target.value })}
                 disabled={!userLoaded}
             />
             <Button label="Add" icon="pi pi-plus" onClick={onAddNewWord} disabled={!userLoaded} className="p-button-success" style={{ flex: '0 0 auto' }} />
