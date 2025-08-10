@@ -84,42 +84,40 @@ const Grammar = () => {
         return html.replace(/<[^>]*>?/gm, '').trim();
     }
 
-    const items = [
-        {
-            label: 'Create Dialogue',
-            icon: 'pi pi-comments',
-            command: () => {
-                const ruleName = selectedRule?.rule_name?.trim() || '';
-                const explanation = stripHtml(selectedRule?.html_explanation);
-                const chatPrompt = `Create a dialogue using this grammar rule: ${ruleName} with explanation: ${explanation}`;
-                const encodedPrompt = encodeURIComponent(chatPrompt);
-                window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
-            }
-        },
-        {
-            label: 'Generate Quiz (Choose Answer)',
-            icon: 'pi pi-question-circle',
-            command: () => {
-                const ruleName = selectedRule?.rule_name?.trim() || '';
-                const explanation = stripHtml(selectedRule?.html_explanation);
-                const chatPrompt = `Generate a multiple-choice quiz based on this grammar rule: ${ruleName} with explanation: ${explanation}`;
-                const encodedPrompt = encodeURIComponent(chatPrompt);
-                window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
-            }
-        },
-        {
-            label: 'Generate Quiz (Write Answer)',
-            icon: 'pi pi-pencil',
-            command: () => {
-                const ruleName = selectedRule?.rule_name?.trim() || '';
-                const explanation = stripHtml(selectedRule?.html_explanation);
-                const chatPrompt = `Generate a fill-in-the-blank quiz based on this grammar rule: ${ruleName} with explanation: ${explanation}`;
-                const encodedPrompt = encodeURIComponent(chatPrompt);
-                window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
-            }
-        }
-    ];
+    const getItems = (rule) => {
+        const ruleName = rule?.rule_name?.trim() || '';
+        const explanation = stripHtml(rule?.html_explanation);
 
+        return [
+            {
+                label: 'Create Dialogue',
+                icon: 'pi pi-comments',
+                command: () => {
+                    const chatPrompt = `Create a dialogue using this grammar rule: ${ruleName} with explanation: ${explanation}`;
+                    const encodedPrompt = encodeURIComponent(chatPrompt);
+                    window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
+                }
+            },
+            {
+                label: 'Generate Quiz (Choose Answer)',
+                icon: 'pi pi-question-circle',
+                command: () => {
+                    const chatPrompt = `Generate a multiple-choice quiz based on this grammar rule: ${ruleName} with explanation: ${explanation}`;
+                    const encodedPrompt = encodeURIComponent(chatPrompt);
+                    window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
+                }
+            },
+            {
+                label: 'Generate Quiz (Write Answer)',
+                icon: 'pi pi-pencil',
+                command: () => {
+                    const chatPrompt = `Generate a fill-in-the-blank quiz based on this grammar rule: ${ruleName} with explanation: ${explanation}`;
+                    const encodedPrompt = encodeURIComponent(chatPrompt);
+                    window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
+                }
+            }
+        ];
+    };
 
     return (
         <div className="p-4">
@@ -176,13 +174,16 @@ const Grammar = () => {
                     body={(row) => (
                         <div className="flex gap-2">
 
-                            <SplitButton icon="pi pi-eye"
-                                         onClick={() => {
-                                             setSelectedRule(row);
-                                             setShowHtmlModal(true);
-                                         }}
-                                         model={items} severity="info"
+                            <SplitButton
+                                icon="pi pi-eye"
+                                onClick={() => {
+                                    setSelectedRule(row);
+                                    setShowHtmlModal(true);
+                                }}
+                                model={getItems(row)}
+                                severity="info"
                             />
+
                             <Button
                                 icon="pi pi-trash"
                                 className="p-button-danger p-button-sm"
