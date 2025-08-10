@@ -143,9 +143,10 @@ const Vocabulary = () => {
 
     const onClearNewWord = () => {
         setFilters({ global: { value: null, matchMode: 'contains' } });
-
         setNewWordData({ word: '', explanation: '', association: '' });
+        localStorage.removeItem('newWordData');
     };
+
 
     const onReloadWords = () => {
         if (user?.id) {

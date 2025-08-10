@@ -144,6 +144,18 @@ const Grammar = () => {
                 value={filters.global?.value || ''}
                 onChange={e => setFilters({ global: { value: e.target.value, matchMode: 'contains' } })}
             />
+            <span
+                style={{
+                    color: 'var(--primary-color)',
+                    fontWeight: 'bold',
+                    fontSize: '1.5rem',
+                    margin: '0 12px',
+                    userSelect: 'none',
+                    flexShrink: 0,
+                }}
+            >
+                ||
+            </span>
             <FloatingInput
                 id="rule_name"
                 label="Rule Name"
