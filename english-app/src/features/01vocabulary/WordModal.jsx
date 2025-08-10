@@ -3,13 +3,15 @@ import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { InputNumber } from 'primereact/inputnumber';
+import clickSoundFile from './click.wav';
+import failSoundFile from './fail.wav';
 
 const WordModal = ({ wordData, onClose, visible }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [feedback, setFeedback] = useState([]);
     const [colorHistory, setColorHistory] = useState([]);
     const [mistypedBefore, setMistypedBefore] = useState([]);
-    const [allKeystrokes, setAllKeystrokes] = useState([]); // Track all keystrokes including backspaces
+    const [allKeystrokes, setAllKeystrokes] = useState([]);
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
     const [proMode, setProMode] = useState(false);
@@ -20,10 +22,12 @@ const WordModal = ({ wordData, onClose, visible }) => {
     const [gameStarted, setGameStarted] = useState(false);
     const inputRef = useRef(null);
 
+    const clickSound = useRef(new Audio(clickSoundFile));
+    const failSound = useRef(new Audio(failSoundFile));
+
     const capitalizedWord = wordData?.word
         ? wordData.word.charAt(0).toUpperCase() + wordData.word.slice(1)
         : '';
-    console.log(capitalizedWord);
 
     const rawPhrase = [wordData?.word, wordData?.explanation, wordData?.association]
         .filter(Boolean)
@@ -31,7 +35,6 @@ const WordModal = ({ wordData, onClose, visible }) => {
         .trim();
 
     const phrase = rawPhrase.charAt(0).toUpperCase() + rawPhrase.slice(1);
-
 
     const reset = () => {
         setCurrentIndex(0);
@@ -100,6 +103,7 @@ const WordModal = ({ wordData, onClose, visible }) => {
                     setFeedback(prev => prev.slice(0, -1));
                     setColorHistory(prev => prev.slice(0, -1));
                 }
+                clickSound.current.play();
                 return;
             }
 
@@ -113,9 +117,12 @@ const WordModal = ({ wordData, onClose, visible }) => {
 
             if (typedChar === expectedChar) {
                 color = wasMistyped ? 'yellow' : 'green';
+                playClickSound();
             } else {
                 color = 'red';
+                playFailSound();
             }
+
 
             const newMistypedBefore = [...mistypedBefore];
             newMistypedBefore[currentIndex] = color === 'red' || wasMistyped;
@@ -221,6 +228,17 @@ const WordModal = ({ wordData, onClose, visible }) => {
         onClose,
     ]);
 
+    const playClickSound = () => {
+        const audio = new Audio(clickSoundFile);
+        audio.play();
+    };
+
+    const playFailSound = () => {
+        const audio = new Audio(failSoundFile);
+        audio.play();
+    };
+
+
     const renderLetters = () => {
         const baseWidth = 1.2;
         const baseHeight = 1.8;
@@ -259,13 +277,11 @@ const WordModal = ({ wordData, onClose, visible }) => {
                         color: char === ' ' ? '#aaa' : 'inherit',
                     }}
                 >
-                {displayChar}
-            </span>
+                    {displayChar}
+                </span>
             );
         });
     };
-
-
 
     const renderFinalSummary = () => {
         if (!showFinalSummary || summaryList.length === 0) return null;
@@ -373,12 +389,11 @@ const WordModal = ({ wordData, onClose, visible }) => {
                 </div>
             </div>
 
-
             {renderFinalSummary()}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', gap: '0.5rem' }}>
-                <Button label="Restart" onClick={startNewGame} />
-                <Button label="Close" onClick={onClose} />
+                <Button label="Restart" onClick={() => { clickSound.current.play(); startNewGame(); }} />
+                <Button label="Close" onClick={() => { clickSound.current.play(); onClose(); }} />
             </div>
         </Dialog>
     );
