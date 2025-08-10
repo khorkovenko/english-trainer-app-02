@@ -100,7 +100,27 @@ const Vocabulary = () => {
         });
     };
 
-    const showHelp = () => toast.current.show({ severity: 'info', summary: 'Help', detail: 'You can add, edit, and delete vocabulary. Right-click a row for context options.', life: 7000 });
+    const showHelp = () => {
+        const word = newWordData.word.trim();
+        if (word) {
+            const prompt = encodeURIComponent(
+                `Explain the word "${word}" in clear and simple terms.
+                              Provide its meaning, part of speech, and common synonyms.
+                              Give at least 2 real-world example sentences.
+                              Then, create a short, natural-sounding dialogue (4–6 lines) that shows how to use "${word}" in everyday conversation.
+                              Make the tone friendly and easy to understand for a language learner.`
+            );
+            const url = `https://chat.openai.com/?prompt=${prompt}`;
+            window.open(url, '_blank');
+        } else {
+            toast.current.show({
+                severity: 'error',
+                summary: 'Empty word!',
+                detail: 'Enter word and AI will help to explain it.',
+                life: 7000,
+            });
+        }
+    };
 
     const onAddNewWord = () => {
         if (!newWordData.word.trim()) {
