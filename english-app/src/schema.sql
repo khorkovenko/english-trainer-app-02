@@ -21,7 +21,6 @@ create table reading (
                          id uuid primary key default uuid_generate_v4(),
                          user_id uuid references auth.users(id) on delete cascade,
                          theme text not null,
-                         prompt text not null,
                          created_at timestamp with time zone default now(),
                          updated_at timestamp with time zone default now()
 );
