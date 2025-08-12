@@ -196,7 +196,7 @@ Now, based on this prompt: "${prompt}", please provide feedback and suggestions.
                         </div>
 
                         <div>
-                        <Card className="shadow-lg border-0" style={{ overflow: 'auto', height: '450px', minWidth: '600px' }}>
+                        <Card className="shadow-lg border-0" style={{ overflow: 'auto', height: '450px', width: '600px' }}>
                             <div className="p-6">
                                 <div className="text-center ">
                                     <h3 className="text-2xl font-bold text-gray-900 mb-2">Writing Prompts</h3>
@@ -220,22 +220,29 @@ Now, based on this prompt: "${prompt}", please provide feedback and suggestions.
                                 <Divider />
 
                                 <div className="space-y-4 mb-6">
-                                    {totalPrompts.map((p, index) => (
-                                        <div key={p.id} className="group">
-                                            <div className="flex items-center gap-4 p-4 bg-white border-2 border-gray-100 rounded-lg hover:border-blue-200 hover:shadow-md transition-all">
-                                                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                                    <span className="text-sm font-semibold text-blue-600">{index + 1}</span>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="text-gray-800 font-medium">{p.prompt}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2 opacity-75 group-hover:opacity-100 transition-opacity">
-                                                    <Button icon="pi pi-comments" className="p-button-text p-button-help p-button-sm" onClick={() => redirectToChatGPT(p.prompt)} tooltip="Send to ChatGPT" />
-                                                    <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => handleDeletePrompt(p.id)} disabled={p.id === 'default'} tooltip={p.id === 'default' ? 'Cannot delete default prompt' : 'Delete prompt'} />
+                                    {[...totalPrompts].reverse().map((p, index) => {
+                                        const isLong = p.prompt.length > 100;
+                                        const displayText = isLong ? p.prompt.slice(0, 100) + '…' : p.prompt;
+                                        return (
+                                            <div key={p.id} className="group">
+                                                <div
+                                                    className="flex items-center gap-4 p-4 bg-white border-2 border-gray-100 rounded-lg hover:border-blue-200 hover:shadow-md transition-all"
+                                                    title={p.prompt} // Tooltip with full prompt
+                                                >
+                                                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                        <span className="text-sm font-semibold text-blue-600">{index + 1}</span>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-gray-800 font-medium">{displayText}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 opacity-75 group-hover:opacity-100 transition-opacity">
+                                                        <Button icon="pi pi-file-edit" className="p-button-text p-button-help p-button-sm" onClick={() => redirectToChatGPT(p.prompt)} tooltip="Send to ChatGPT" />
+                                                        <Button icon="pi pi-trash" className="p-button-text p-button-danger p-button-sm" onClick={() => handleDeletePrompt(p.id)} disabled={p.id === 'default'} tooltip={p.id === 'default' ? 'Cannot delete default prompt' : 'Delete prompt'} />
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </Card>
