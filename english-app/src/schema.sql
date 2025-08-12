@@ -32,3 +32,19 @@ create table reading_prompts (
                                  created_at timestamp with time zone default now(),
                                  updated_at timestamp with time zone default now()
 );
+
+create table listening (
+                           id uuid primary key default uuid_generate_v4(),
+                           user_id uuid references auth.users(id) on delete cascade,
+                           theme text not null,
+                           created_at timestamp with time zone default now(),
+                           updated_at timestamp with time zone default now()
+);
+
+create table listening_prompts (
+                                   id uuid primary key default uuid_generate_v4(),
+                                   listening_id uuid references listening(id) on delete cascade,
+                                   prompt text not null,
+                                   created_at timestamp with time zone default now(),
+                                   updated_at timestamp with time zone default now()
+);
