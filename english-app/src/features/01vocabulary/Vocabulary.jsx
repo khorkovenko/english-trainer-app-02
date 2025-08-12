@@ -8,7 +8,7 @@ import { ContextMenu } from 'primereact/contextmenu';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Button } from 'primereact/button';
 import { Image } from 'primereact/image';
-import WordModal from './WordModal';
+import TypingTrainerModal from './TypingTrainerModal';
 import {
     fetchAuthUser,
     fetchWordsByUserId,
@@ -239,7 +239,7 @@ const Vocabulary = () => {
                 <Column rowEditor headerStyle={{ width: '10%', minWidth: '8rem' }} bodyStyle={{ textAlign: 'center' }} />
             </DataTable>
             <ContextMenu model={cmItems} ref={contextMenu} />
-            <WordModal wordData={modalWord} visible={showModal} onClose={() => setShowModal(false)} />
+            <TypingTrainerModal wordData={modalWord} visible={showModal} onClose={() => setShowModal(false)} />
         </div>
     );
 };

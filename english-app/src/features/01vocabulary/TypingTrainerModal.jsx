@@ -6,7 +6,7 @@ import { InputNumber } from 'primereact/inputnumber';
 import clickSoundFile from './typewriter.mp3';
 import failSoundFile from './error.mp3';
 
-const WordModal = ({ wordData, onClose, visible }) => {
+const TypingTrainerModal = ({ wordData, onClose, visible }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [feedback, setFeedback] = useState([]);
     const [colorHistory, setColorHistory] = useState([]);
@@ -419,4 +419,4 @@ const WordModal = ({ wordData, onClose, visible }) => {
     );
 };
 
-export default WordModal;
+export default TypingTrainerModal;

@@ -5,6 +5,9 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { Card } from 'primereact/card';
+import { Divider } from 'primereact/divider';
+import { Badge } from 'primereact/badge';
 import { fetchAuthUser } from '../loginModal/authSlice';
 import { fetchWritingPrompts, addWritingPrompt, deleteWritingPrompt } from './writingSlice';
 
@@ -19,9 +22,9 @@ export default function Writing() {
 
     const [theme, setTheme] = useState(localStorage.getItem('writingTheme') || '');
     const [text, setText] = useState(localStorage.getItem('writingText') || '');
-    const [timer, setTimer] = useState(0);
+    const [timer, setTimer] = useState(parseInt(localStorage.getItem('writingTimer')) || 0);
     const [isTyping, setIsTyping] = useState(false);
-    const [intervalId, setIntervalId] = useState(null);
+    const intervalRef = useRef(null);
     const [newPrompt, setNewPrompt] = useState('');
 
     useEffect(() => {
@@ -42,24 +45,53 @@ export default function Writing() {
         localStorage.setItem('writingText', text);
     }, [text]);
 
-    const handleStartTimer = () => {
+    useEffect(() => {
+        localStorage.setItem('writingTimer', timer.toString());
+    }, [timer]);
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                stopTimer();
+            }
+        };
+
+        const handleBlur = () => {
+            stopTimer();
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('blur', handleBlur);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, []);
+
+    const startTimer = () => {
         if (!isTyping) {
             setIsTyping(true);
-            const id = setInterval(() => {
+            intervalRef.current = setInterval(() => {
                 setTimer((t) => t + 1);
             }, 1000);
-            setIntervalId(id);
         }
     };
 
-    const handleReset = () => {
-        setTimer(0);
+    const stopTimer = () => {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
         setIsTyping(false);
-        if (intervalId) clearInterval(intervalId);
+    };
+
+    const handleReset = () => {
+        stopTimer();
+        setTimer(0);
         setTheme('');
         setText('');
         localStorage.removeItem('writingTheme');
         localStorage.removeItem('writingText');
+        localStorage.removeItem('writingTimer');
     };
 
     const handleAddPrompt = () => {
@@ -68,88 +100,201 @@ export default function Writing() {
             .unwrap()
             .then(() => setNewPrompt(''))
             .catch(() =>
-                toastRef.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to add prompt' })
+                toastRef.current?.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to add prompt'
+                })
             );
     };
 
     const handleDeletePrompt = (id) => {
         if (id === 'default') return;
         confirmDialog({
-            message: 'Delete this prompt?',
+            message: 'Are you sure you want to delete this prompt?',
+            header: 'Delete Confirmation',
+            icon: 'pi pi-exclamation-triangle',
             acceptClassName: 'p-button-danger',
             accept: () => dispatch(deleteWritingPrompt({ promptId: id, userId: user.id }))
         });
     };
 
-    const handleGoToChatGPT = (prompt) => {
-        const message = `Theme: ${theme}\nText: ${text}\nPrompt: ${prompt}`;
-        const encoded = encodeURIComponent(message);
-        window.open(`https://chat.openai.com/?q=${encoded}`, '_blank');
+    const redirectToChatGPT = (prompt) => {
+        const fullQuery = `${theme} ${text} ${prompt}`;
+        window.open(`https://chat.openai.com/?q=${encodeURIComponent(fullQuery)}`, '_blank');
     };
 
     const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
     const totalPrompts = [DEFAULT_PROMPT, ...prompts];
 
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
     return (
-        <div className="p-4 space-y-4 text-center">
-            <Toast ref={toastRef} />
-            <ConfirmDialog />
-            <h2 className="text-xl font-semibold">✍️ Writing Practice</h2>
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-4xl mx-auto px-4">
+                <Toast ref={toastRef} />
+                <ConfirmDialog />
 
-            <div className="space-y-2 max-w-xl mx-auto">
-                <InputText
-                    placeholder="Enter theme"
-                    value={theme}
-                    onChange={(e) => setTheme(e.target.value)}
-                    className="w-full"
-                />
-                <InputTextarea
-                    rows={6}
-                    placeholder="Start writing..."
-                    value={text}
-                    onFocus={handleStartTimer}
-                    onKeyDown={handleStartTimer}
-                    onChange={(e) => setText(e.target.value)}
-                    className="w-full"
-                />
-                <div className="flex items-center justify-between">
-                    <div>Word Count: {wordCount}</div>
-                    <div>Time: {timer}s</div>
-                    <Button
-                        label="Reset"
-                        icon="pi pi-refresh"
-                        className="p-button-warning"
-                        onClick={handleReset}
-                    />
+                <div className="text-center mb-8">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                        ✍️ Writing Practice
+                    </h1>
+                    <p className="text-lg text-gray-600">
+                        Express your thoughts and improve your writing skills
+                    </p>
                 </div>
-            </div>
 
-            <div className="space-y-2 max-w-xl mx-auto">
-                <h3 className="font-semibold">Prompts</h3>
-                {totalPrompts.map((p) => (
-                    <div key={p.id} className="flex items-center gap-2 justify-center">
-                        <span className="flex-1 text-center">{p.prompt}</span>
+                <div className="space-y-6">
+                    <Card className="shadow-lg border-0">
+                        <div className="p-8 text-center">
+                            <div className="mb-8">
+                                <label className="block text-xl font-bold text-gray-700 mb-4">
+                                    Writing Theme
+                                </label>
+                                <div className="max-w-2xl mx-auto">
+                                    <InputText
+                                        placeholder="Enter your writing theme or topic..."
+                                        value={theme}
+                                        onChange={(e) => setTheme(e.target.value)}
+                                        className="w-full p-6 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mb-8">
+                                <label className="block text-xl font-bold text-gray-700 mb-4">
+                                    Your Writing
+                                </label>
+                                <div className="max-w-4xl mx-auto">
+                                    <InputTextarea
+                                        rows={10}
+                                        placeholder="Start writing your thoughts here..."
+                                        value={text}
+                                        onKeyDown={startTimer}
+                                        onChange={(e) => setText(e.target.value)}
+                                        onBlur={stopTimer}
+                                        className="w-full p-6 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 transition-colors resize-none"
+                                    />
+                                </div>
+                            </div>
+
+                        </div>
+                    </Card>
+
+                    <div className="flex flex-wrap items-center justify-center gap-8 p-8 bg-white shadow-lg rounded-xl border-0">
+                        <div className="flex items-center gap-4">
+                            <i className="pi pi-file-word text-blue-500 text-4xl"></i>
+                            <div className="text-center">
+                                <div className="text-3xl font-bold text-gray-900">{wordCount}</div>
+                                <div className="text-lg font-semibold text-gray-600">Words</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <i className="pi pi-clock text-green-500 text-4xl"></i>
+                            <div className="text-center">
+                                <div className={`text-3xl font-bold ${isTyping ? 'text-green-600 animate-pulse' : 'text-gray-900'}`}>
+                                    {formatTime(timer)}
+                                </div>
+                                <div className="text-lg font-semibold text-gray-600">Time</div>
+                            </div>
+                        </div>
                         <Button
-                            icon="pi pi-arrow-right"
-                            className="p-button-info p-button-sm"
-                            onClick={() => handleGoToChatGPT(p.prompt)}
-                        />
-                        <Button
-                            icon="pi pi-trash"
-                            className="p-button-danger p-button-sm"
-                            onClick={() => handleDeletePrompt(p.id)}
-                            disabled={p.id === 'default'}
+                            label="Reset All"
+                            icon="pi pi-refresh"
+                            className="p-button-outlined p-button-warning text-xl px-8 py-4"
+                            onClick={handleReset}
                         />
                     </div>
-                ))}
-                <div className="flex gap-2 justify-center">
-                    <InputText
-                        value={newPrompt}
-                        onChange={(e) => setNewPrompt(e.target.value)}
-                        placeholder="New prompt"
-                        className="flex-1"
-                    />
-                    <Button label="Add" icon="pi pi-plus" onClick={handleAddPrompt} />
+
+                    <Card className="shadow-lg border-0">
+                        <div className="p-6">
+                            <div className="text-center mb-6">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                                    Writing Prompts
+                                </h3>
+                                <p className="text-gray-600">
+                                    Get inspired with creative writing prompts
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="shadow-lg border-0">
+                        <div className="p-6">
+                            <div className="text-center mb-6">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                                    Writing Prompts
+                                </h3>
+                                <p className="text-gray-600">
+                                    Get inspired with creative writing prompts
+                                </p>
+                            </div>
+
+                            <div className="space-y-4 mb-6">
+                                {totalPrompts.map((p, index) => (
+                                    <div key={p.id} className="group">
+                                        <div className="flex items-center gap-4 p-4 bg-white border-2 border-gray-100 rounded-lg hover:border-blue-200 hover:shadow-md transition-all">
+                                            <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <span className="text-sm font-semibold text-blue-600">
+                                                    {index + 1}
+                                                </span>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-gray-800 font-medium">
+                                                    {p.prompt}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2 opacity-75 group-hover:opacity-100 transition-opacity">
+                                                <Button
+                                                    icon="pi pi-external-link"
+                                                    className="p-button-text p-button-info p-button-sm"
+                                                    onClick={() => redirectToChatGPT(p.prompt)}
+                                                    tooltip="Open in ChatGPT"
+                                                    tooltipOptions={{ position: 'top' }}
+                                                />
+                                                <Button
+                                                    icon="pi pi-trash"
+                                                    className="p-button-text p-button-danger p-button-sm"
+                                                    onClick={() => handleDeletePrompt(p.id)}
+                                                    disabled={p.id === 'default'}
+                                                    tooltip={p.id === 'default' ? 'Cannot delete default prompt' : 'Delete prompt'}
+                                                    tooltipOptions={{ position: 'top' }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <Divider />
+
+                            <div className="mt-6">
+                                <h4 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                                    Add New Prompt
+                                </h4>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <InputText
+                                        value={newPrompt}
+                                        onChange={(e) => setNewPrompt(e.target.value)}
+                                        placeholder="Enter your custom writing prompt..."
+                                        className="flex-1 p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 transition-colors"
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddPrompt()}
+                                    />
+                                    <Button
+                                        label="Add Prompt"
+                                        icon="pi pi-plus"
+                                        onClick={handleAddPrompt}
+                                        disabled={!newPrompt.trim()}
+                                        className="p-button-success px-6"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
             </div>
         </div>
