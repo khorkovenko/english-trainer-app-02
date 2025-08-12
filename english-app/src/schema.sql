@@ -64,3 +64,12 @@ create table speaking_prompts (
                                   created_at timestamp with time zone default now(),
                                   updated_at timestamp with time zone default now()
 );
+
+create table writing_prompts (
+                                 id uuid primary key default uuid_generate_v4(),
+                                 user_id uuid references auth.users(id) on delete cascade,
+                                 prompt text not null,
+                                 created_at timestamp with time zone default now(),
+                                 updated_at timestamp with time zone default now()
+);
+
