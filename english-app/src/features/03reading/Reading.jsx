@@ -6,26 +6,49 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { ContextMenu } from 'primereact/contextmenu';
 import { fetchAuthUser } from '../loginModal/authSlice';
 import {
     fetchReadings,
     saveReading,
     saveReadingPrompt,
     deleteReadingPrompt,
+    deleteReading,
 } from './readingSlice';
+
+const FloatingInput = ({ id, label, value, onChange, disabled }) => (
+    <span
+        className="p-float-label"
+        style={{
+            flex: '1 1 200px',
+            minWidth: '200px',
+            display: 'inline-flex',
+            flexDirection: 'column'
+        }}
+    >
+        <InputText
+            id={id}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            className="w-full"
+        />
+        <label htmlFor={id}>{label}</label>
+    </span>
+);
 
 const Reading = () => {
     const dispatch = useDispatch();
     const toast = useRef(null);
+    const contextMenu = useRef(null);
     const { user } = useSelector((state) => state.auth);
     const { readings, loading, error } = useSelector((state) => state.reading);
 
     const [newReading, setNewReading] = useState({ theme: '' });
-
-    // Use refs for input values instead of controlled state
+    const [selectedReading, setSelectedReading] = useState(null);
     const inputRefs = useRef({});
 
-    // Load readings when user changes or on mount
+    // Load readings
     useEffect(() => {
         if (!user?.id) {
             dispatch(fetchAuthUser())
@@ -57,22 +80,16 @@ const Reading = () => {
     const handleAddPrompt = (readingId) => {
         const inputRef = inputRefs.current[readingId];
         const text = inputRef?.value?.trim();
-
         if (!text) return;
 
         dispatch(saveReadingPrompt({ readingId, prompt: text, userId: user.id }))
             .unwrap()
             .then(() => {
-                // Clear input after successful addition
-                if (inputRef) {
-                    inputRef.value = '';
-                }
-
-                // Redirect to Perplexity with the prompt
+                if (inputRef) inputRef.value = '';
                 const perplexityUrl = `https://www.perplexity.ai/?q=${encodeURIComponent(text)}`;
                 window.open(perplexityUrl, '_blank');
             })
-            .catch((err) => {
+            .catch(() => {
                 toast.current?.show({
                     severity: 'error',
                     summary: 'Error',
@@ -89,109 +106,128 @@ const Reading = () => {
         });
     };
 
+    const handleDeleteReading = (reading) => {
+        confirmDialog({
+            message: `Delete reading "${reading.theme}" and all its prompts?`,
+            header: 'Confirm Delete',
+            icon: 'pi pi-exclamation-triangle',
+            acceptClassName: 'p-button-danger',
+            accept: () => {
+                dispatch(deleteReading({ readingId: reading.id, userId: user.id }));
+            },
+        });
+    };
+
     const redirectToPerplexity = (prompt) => {
         const perplexityUrl = `https://www.perplexity.ai/?q=${encodeURIComponent(prompt)}`;
         window.open(perplexityUrl, '_blank');
     };
 
+    // Prompts column (one-line items)
     const promptsBody = (rowData) => {
         const prompts = Array.isArray(rowData.reading_prompts) ? rowData.reading_prompts : [];
-
         return (
             <div>
                 {prompts.length === 0 && (
-                    <div className="text-sm text-gray-500 mb-1">No prompts yet</div>
+                    <div className="text-sm text-gray-500 italic">No prompts yet</div>
                 )}
-                {prompts.map((p) => (
-                    <div
-                        key={p.id}
-                        className="flex justify-between items-center border-b py-1 mb-1"
-                    >
-                        <span
-                            className="cursor-pointer text-blue-600 hover:text-blue-800 flex-1 mr-2"
-                            onClick={() => redirectToPerplexity(p.prompt)}
-                            title="Click to search on Perplexity"
+                <ul className="list-none p-0 m-0 space-y-1">
+                    {prompts.map((p) => (
+                        <li
+                            key={p.id}
+                            className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded"
                         >
-                            {p.prompt}
-                        </span>
-                        <div className="flex gap-1">
-                            <Button
-                                icon="pi pi-external-link"
-                                className="p-button-info p-button-sm"
+                            <span
+                                className="cursor-pointer text-blue-600 hover:text-blue-800 flex-1 mr-2 truncate"
                                 onClick={() => redirectToPerplexity(p.prompt)}
-                                tooltip="Open in Perplexity"
-                                tooltipOptions={{ position: 'top' }}
-                            />
-                            <Button
-                                icon="pi pi-trash"
-                                className="p-button-danger p-button-sm"
-                                onClick={() => handleDeletePrompt(p.id)}
-                                tooltip="Delete prompt"
-                                tooltipOptions={{ position: 'top' }}
-                            />
-                        </div>
-                    </div>
-                ))}
-                <div className="flex mt-2 gap-2">
-                    <InputText
-                        ref={(el) => {
-                            if (el) inputRefs.current[rowData.id] = el;
-                        }}
-                        type="text"
-                        placeholder="Enter new prompt"
-                        className="flex-1 p-2 border border-gray-300 rounded"
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleAddPrompt(rowData.id);
-                            }
-                        }}
-                    />
-                    <Button
-                        label="Add & Search"
-                        icon="pi pi-plus"
-                        onClick={() => handleAddPrompt(rowData.id)}
-                        className="p-button-success"
-                        tooltip="Add prompt and search on Perplexity"
-                        tooltipOptions={{ position: 'top' }}
-                    />
-                </div>
+                                title="Click to search on Perplexity"
+                            >
+                                {p.prompt}
+                            </span>
+                            <div className="flex gap-1 flex-shrink-0">
+                                <Button
+                                    icon="pi pi-external-link"
+                                    className="p-button-info p-button-sm"
+                                    onClick={() => redirectToPerplexity(p.prompt)}
+                                    tooltip="Open in Perplexity"
+                                />
+                                <Button
+                                    icon="pi pi-trash"
+                                    className="p-button-danger p-button-sm"
+                                    onClick={() => handleDeletePrompt(p.id)}
+                                    tooltip="Delete prompt"
+                                />
+                            </div>
+                        </li>
+                    ))}
+                </ul>
             </div>
         );
     };
 
-    const onKeyDownNewReading = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleAddReading();
-        }
-    };
+    // Prompt input column
+    const promptInputBody = (rowData) => (
+        <div className="flex gap-2">
+            <InputText
+                ref={(el) => {
+                    if (el) inputRefs.current[rowData.id] = el;
+                }}
+                type="text"
+                placeholder="Enter new prompt"
+                className="flex-1"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddPrompt(rowData.id);
+                    }
+                }}
+            />
+            <Button
+                icon="pi pi-plus"
+                label="Add"
+                className="p-button-success p-button-sm"
+                onClick={() => handleAddPrompt(rowData.id)}
+            />
+        </div>
+    );
+
+    const header = (
+        <div className="flex flex-wrap items-end gap-3">
+            <FloatingInput
+                id="newTheme"
+                label="Reading Theme"
+                value={newReading.theme}
+                onChange={(e) => setNewReading({ theme: e.target.value })}
+                disabled={loading}
+            />
+            <Button
+                label="Add Reading"
+                icon="pi pi-plus"
+                onClick={handleAddReading}
+                disabled={!newReading.theme.trim()}
+                className="p-button-primary"
+                style={{ flex: '0 0 auto' }}
+            />
+        </div>
+    );
+
+    const cmItems = [
+        {
+            label: 'Delete Reading',
+            icon: 'pi pi-trash',
+            command: () => {
+                if (selectedReading) handleDeleteReading(selectedReading);
+            },
+        },
+    ];
 
     return (
         <div className="p-4">
             <Toast ref={toast} />
             <ConfirmDialog />
+            <ContextMenu model={cmItems} ref={contextMenu} />
 
-            <div className="mb-6">
-                <h2 className="text-2xl font-semibold mb-4 text-gray-800">📖 Reading Practice</h2>
-                <div className="flex gap-2 mb-4">
-                    <InputText
-                        placeholder="Enter reading theme..."
-                        value={newReading.theme}
-                        onChange={(e) => setNewReading({ theme: e.target.value })}
-                        autoComplete="off"
-                        className="flex-1"
-                        onKeyDown={onKeyDownNewReading}
-                    />
-                    <Button
-                        label="Add Reading"
-                        icon="pi pi-plus"
-                        onClick={handleAddReading}
-                        disabled={!newReading.theme.trim()}
-                        className="p-button-primary"
-                    />
-                </div>
-            </div>
+            <h2 className="text-xl font-semibold mb-4">📖 Reading Practice</h2>
 
             <DataTable
                 value={readings}
@@ -202,6 +238,11 @@ const Reading = () => {
                 paginator={readings?.length > 10}
                 rows={10}
                 rowsPerPageOptions={[10, 25, 50]}
+                header={header}
+                selectionMode="single"
+                contextMenuSelection={selectedReading}
+                onContextMenuSelectionChange={(e) => setSelectedReading(e.value)}
+                onContextMenu={(e) => contextMenu.current.show(e.originalEvent)}
             >
                 <Column
                     field="theme"
@@ -210,9 +251,14 @@ const Reading = () => {
                     style={{ width: '30%' }}
                 />
                 <Column
-                    header="Prompts & Search"
+                    header="Prompts"
                     body={promptsBody}
-                    style={{ width: '70%' }}
+                    style={{ width: '40%' }}
+                />
+                <Column
+                    header="Add Prompt"
+                    body={promptInputBody}
+                    style={{ width: '30%' }}
                 />
             </DataTable>
 

@@ -1,83 +1,62 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { supabaseClient } from '../../app/supabaseClient';
 
-// Fetch readings with their prompts
 export const fetchReadings = createAsyncThunk(
     'reading/fetchReadings',
     async (userId, thunkAPI) => {
         const { data, error } = await supabaseClient
             .from('reading')
-            .select(`
-        *,
-        reading_prompts(*)
-      `)
+            .select('*, reading_prompts(*)')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
-
         if (error) return thunkAPI.rejectWithValue(error.message);
         return data;
     }
 );
 
-// Save or update a reading
 export const saveReading = createAsyncThunk(
     'reading/saveReading',
     async ({ userId, reading }, thunkAPI) => {
-        try {
-            if (reading.id) {
-                const { error } = await supabaseClient
-                    .from('reading')
-                    .update({
-                        theme: reading.theme,
-                        updated_at: new Date(),
-                    })
-                    .eq('id', reading.id);
-                if (error) return thunkAPI.rejectWithValue(error.message);
-            } else {
-                const { error } = await supabaseClient
-                    .from('reading')
-                    .insert([
-                        {
-                            user_id: userId,
-                            theme: reading.theme,
-                            created_at: new Date(),
-                            updated_at: new Date(),
-                        },
-                    ]);
-                if (error) return thunkAPI.rejectWithValue(error.message);
-            }
-            return thunkAPI.dispatch(fetchReadings(userId));
-        } catch (err) {
-            return thunkAPI.rejectWithValue(err.message);
+        if (reading.id) {
+            const { error } = await supabaseClient
+                .from('reading')
+                .update({ theme: reading.theme, updated_at: new Date() })
+                .eq('id', reading.id);
+            if (error) return thunkAPI.rejectWithValue(error.message);
+        } else {
+            const { error } = await supabaseClient
+                .from('reading')
+                .insert([{ user_id: userId, theme: reading.theme, created_at: new Date(), updated_at: new Date() }]);
+            if (error) return thunkAPI.rejectWithValue(error.message);
         }
+        return thunkAPI.dispatch(fetchReadings(userId));
     }
 );
 
-// Add prompt to a reading
 export const saveReadingPrompt = createAsyncThunk(
     'reading/saveReadingPrompt',
     async ({ readingId, prompt, userId }, thunkAPI) => {
         const { error } = await supabaseClient.from('reading_prompts').insert([
-            {
-                reading_id: readingId,
-                prompt,
-                created_at: new Date(),
-                updated_at: new Date(),
-            },
+            { reading_id: readingId, prompt, created_at: new Date(), updated_at: new Date() }
         ]);
         if (error) return thunkAPI.rejectWithValue(error.message);
         return thunkAPI.dispatch(fetchReadings(userId));
     }
 );
 
-// Delete prompt
 export const deleteReadingPrompt = createAsyncThunk(
     'reading/deleteReadingPrompt',
     async ({ promptId, userId }, thunkAPI) => {
-        const { error } = await supabaseClient
-            .from('reading_prompts')
-            .delete()
-            .eq('id', promptId);
+        const { error } = await supabaseClient.from('reading_prompts').delete().eq('id', promptId);
+        if (error) return thunkAPI.rejectWithValue(error.message);
+        return thunkAPI.dispatch(fetchReadings(userId));
+    }
+);
+
+export const deleteReading = createAsyncThunk(
+    'reading/deleteReading',
+    async ({ readingId, userId }, thunkAPI) => {
+        const { error } = await supabaseClient.from('reading').delete().eq('id', readingId);
         if (error) return thunkAPI.rejectWithValue(error.message);
         return thunkAPI.dispatch(fetchReadings(userId));
     }
@@ -106,8 +85,7 @@ const readingSlice = createSlice({
                 state.loading = false;
             })
             .addMatcher(
-                (action) =>
-                    action.type.startsWith('reading/') && action.type.endsWith('/rejected'),
+                (action) => action.type.startsWith('reading/') && action.type.endsWith('/rejected'),
                 (state, action) => {
                     state.error = action.payload;
                     state.loading = false;
