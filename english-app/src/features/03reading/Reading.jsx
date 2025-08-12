@@ -25,10 +25,12 @@ const FloatingInput = ({ id, label, value, onChange, disabled }) => (
             flexDirection: 'column'
         }}
     >
-    <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
-    <label htmlFor={id}>{label}</label>
-  </span>
+        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
+        <label htmlFor={id}>{label}</label>
+    </span>
 );
+
+const DEFAULT_PROMPT = 'Explain the theme in detail and give reading comprehension questions.';
 
 export default function Reading() {
     const dispatch = useDispatch();
@@ -55,18 +57,30 @@ export default function Reading() {
             toastRef.current?.show({ severity: 'warn', summary: 'Validation', detail: 'Theme is required' });
             return;
         }
+
         dispatch(saveReading({ userId: user.id, reading: newReading }))
             .unwrap()
             .then((savedReading) => {
-                dispatch(
-                    saveReadingPrompt({
-                        readingId: savedReading.id,
-                        prompt: 'First default prompt',
-                        userId: user.id
-                    })
-                );
+                if (savedReading?.id) {
+                    return dispatch(
+                        saveReadingPrompt({
+                            readingId: savedReading.id,
+                            prompt: DEFAULT_PROMPT,
+                            userId: user.id
+                        })
+                    ).unwrap();
+                } else {
+                    throw new Error('No reading ID returned');
+                }
+            })
+            .then(() => {
+                dispatch(fetchReadings(user.id));
+                setNewReading({ theme: '' });
+            })
+            .catch((err) => {
+                console.error(err);
+                toastRef.current?.show({ severity: 'error', summary: 'Error', detail: err.message || 'Failed to add reading or prompt' });
             });
-        setNewReading({ theme: '' });
     };
 
     const handleAddPrompt = (readingId, redirect = false) => {
@@ -81,6 +95,7 @@ export default function Reading() {
                 if (redirect) {
                     redirectToPerplexity(readingId, text);
                 }
+                dispatch(fetchReadings(user.id));
             })
             .catch(() =>
                 toastRef.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to add prompt' })
@@ -91,7 +106,7 @@ export default function Reading() {
         confirmDialog({
             message: 'Delete this prompt?',
             acceptClassName: 'p-button-danger',
-            accept: () => dispatch(deleteReadingPrompt({ promptId, userId: user.id }))
+            accept: () => dispatch(deleteReadingPrompt({ promptId, userId: user.id })).then(() => dispatch(fetchReadings(user.id)))
         });
     };
 
@@ -101,7 +116,7 @@ export default function Reading() {
             header: 'Confirm Delete',
             icon: 'pi pi-exclamation-triangle',
             acceptClassName: 'p-button-danger',
-            accept: () => dispatch(deleteReading({ readingId: reading.id, userId: user.id }))
+            accept: () => dispatch(deleteReading({ readingId: reading.id, userId: user.id })).then(() => dispatch(fetchReadings(user.id)))
         });
     };
 
@@ -130,16 +145,16 @@ export default function Reading() {
                             marginTop: '0.25rem'
                         }}
                     >
-            <span className="text-gray-500" style={{ fontSize: '0.8rem' }}>
-              ●
-            </span>
+                        <span className="text-gray-500" style={{ fontSize: '0.8rem' }}>
+                            ●
+                        </span>
                         <span
                             className="cursor-pointer text-blue-600 hover:text-blue-800 truncate flex-1"
                             style={{ margin: '0 15px' }}
                             onClick={() => redirectToPerplexity(rowData.id, p.prompt)}
                         >
-              {p.prompt}
-            </span>
+                            {p.prompt}
+                        </span>
                         <Button
                             icon="pi pi-external-link"
                             className="p-button-info p-button-sm"
@@ -157,7 +172,7 @@ export default function Reading() {
     };
 
     const promptInputBody = (rowData) => (
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
             <InputText
                 ref={(el) => el && (inputRefs.current[rowData.id] = el)}
                 placeholder="Enter new prompt"
@@ -177,8 +192,8 @@ export default function Reading() {
                     margin: '0 12px'
                 }}
             >
-        |
-      </span>
+                |
+            </span>
             <Button
                 icon="pi pi-plus"
                 label="Add"
@@ -207,8 +222,8 @@ export default function Reading() {
                     margin: '0 12px'
                 }}
             >
-        ||
-      </span>
+                ||
+            </span>
             <Button
                 label="Add Theme"
                 icon="pi pi-plus"

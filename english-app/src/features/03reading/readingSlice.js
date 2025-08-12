@@ -23,24 +23,29 @@ export const saveReading = createAsyncThunk(
                 .update({ theme: reading.theme, updated_at: new Date() })
                 .eq('id', reading.id);
             if (error) return thunkAPI.rejectWithValue(error.message);
+            return { id: reading.id, ...reading };
         } else {
-            const { error } = await supabaseClient
+            const { data, error } = await supabaseClient
                 .from('reading')
-                .insert([{ user_id: userId, theme: reading.theme, created_at: new Date(), updated_at: new Date() }]);
+                .insert([{ user_id: userId, theme: reading.theme, created_at: new Date(), updated_at: new Date() }])
+                .select()
+                .single();
             if (error) return thunkAPI.rejectWithValue(error.message);
+            return data;
         }
-        return thunkAPI.dispatch(fetchReadings(userId));
     }
 );
 
 export const saveReadingPrompt = createAsyncThunk(
     'reading/saveReadingPrompt',
     async ({ readingId, prompt, userId }, thunkAPI) => {
-        const { error } = await supabaseClient.from('reading_prompts').insert([
+        const { data, error } = await supabaseClient.from('reading_prompts').insert([
             { reading_id: readingId, prompt, created_at: new Date(), updated_at: new Date() }
-        ]);
+        ])
+            .select()
+            .single();
         if (error) return thunkAPI.rejectWithValue(error.message);
-        return thunkAPI.dispatch(fetchReadings(userId));
+        return data;
     }
 );
 
@@ -49,7 +54,6 @@ export const deleteReadingPrompt = createAsyncThunk(
     async ({ promptId, userId }, thunkAPI) => {
         const { error } = await supabaseClient.from('reading_prompts').delete().eq('id', promptId);
         if (error) return thunkAPI.rejectWithValue(error.message);
-        return thunkAPI.dispatch(fetchReadings(userId));
     }
 );
 
@@ -58,7 +62,6 @@ export const deleteReading = createAsyncThunk(
     async ({ readingId, userId }, thunkAPI) => {
         const { error } = await supabaseClient.from('reading').delete().eq('id', readingId);
         if (error) return thunkAPI.rejectWithValue(error.message);
-        return thunkAPI.dispatch(fetchReadings(userId));
     }
 );
 
