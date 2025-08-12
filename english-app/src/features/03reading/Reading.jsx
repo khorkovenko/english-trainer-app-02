@@ -14,6 +14,7 @@ import {
     deleteReadingPrompt,
     deleteReading
 } from './readingSlice';
+import {Tooltip} from "primereact/tooltip";
 
 const FloatingInput = ({ id, label, value, onChange, disabled }) => (
     <span
@@ -123,50 +124,56 @@ export default function Reading() {
     const redirectToPerplexity = (readingId, prompt) => {
         const theme = readings.find((r) => r.id === readingId)?.theme || '';
         window.open(
-            `https://www.perplexity.ai/?q=${encodeURIComponent(theme + ' generate for ' + prompt)}`,
+            `https://www.perplexity.ai/?q=${encodeURIComponent('Accordingly to this theme: ' + theme + ' generate prompt ' + prompt)}`,
             '_blank'
         );
     };
 
     const promptsBody = (rowData) => {
         const prompts = Array.isArray(rowData.reading_prompts) ? rowData.reading_prompts : [];
+
         return (
             <div className="space-y-1">
                 {prompts.length === 0 && (
                     <div className="text-sm text-gray-500 italic">No prompts yet</div>
                 )}
-                {prompts.map((p) => (
-                    <div
-                        key={p.id}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            marginTop: '0.25rem'
-                        }}
-                    >
+                {prompts.map((p) => {
+                    const shortCaption = p.prompt.length > 20 ? p.prompt.slice(0, 50) + '...' : p.prompt;
+
+                    return (
+                        <div
+                            key={p.id}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                marginTop: '0.25rem'
+                            }}
+                        >
                         <span className="text-gray-500" style={{ fontSize: '0.8rem' }}>
                             ●
                         </span>
-                        <span
-                            className="cursor-pointer text-blue-600 hover:text-blue-800 truncate flex-1"
-                            style={{ margin: '0 15px' }}
-                            onClick={() => redirectToPerplexity(rowData.id, p.prompt)}
-                        >
-                            {p.prompt}
+                            <span
+                                id={`prompt-${p.id}`}
+                                className="truncate flex-1 cursor-default"
+                                style={{ margin: '0 15px' }}
+                            >
+                            {shortCaption}
                         </span>
-                        <Button
-                            icon="pi pi-external-link"
-                            className="p-button-info p-button-sm"
-                            onClick={() => redirectToPerplexity(rowData.id, p.prompt)}
-                        />
-                        <Button
-                            icon="pi pi-trash"
-                            className="p-button-danger p-button-sm"
-                            onClick={() => handleDeletePrompt(p.id)}
-                        />
-                    </div>
-                ))}
+                            <Tooltip target={`#prompt-${p.id}`} content={p.prompt} />
+                            <Button
+                                icon="pi pi-external-link"
+                                className="p-button-info p-button-sm"
+                                onClick={() => redirectToPerplexity(rowData.id, p.prompt)}
+                            />
+                            <Button
+                                icon="pi pi-trash"
+                                className="p-button-danger p-button-sm"
+                                onClick={() => handleDeletePrompt(p.id)}
+                            />
+                        </div>
+                    );
+                })}
             </div>
         );
     };
