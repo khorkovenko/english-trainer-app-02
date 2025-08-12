@@ -3,8 +3,8 @@ import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { InputNumber } from 'primereact/inputnumber';
-import clickSoundFile from './click.wav';
-import failSoundFile from './fail.wav';
+import clickSoundFile from './typewriter.mp3';
+import failSoundFile from './error.mp3';
 
 const WordModal = ({ wordData, onClose, visible }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
