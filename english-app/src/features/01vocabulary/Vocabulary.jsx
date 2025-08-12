@@ -228,8 +228,18 @@ const Vocabulary = () => {
                 }}
                 onContextMenu={(e) => {
                     const word = e.data;
-                    if (word && window.confirm(`Delete word "${word.word}"?`)) {
-                        if (user?.id && word.id) dispatch(deleteWordById({ userId: user.id, wordId: word.id }));
+                    if (word) {
+                        confirmDialog({
+                            message: `Delete word "${word.word}"?`,
+                            header: 'Confirm Delete',
+                            icon: 'pi pi-exclamation-triangle',
+                            acceptClassName: 'p-button-danger',
+                            accept: () => {
+                                if (user?.id && word.id) {
+                                    dispatch(deleteWordById({ userId: user.id, wordId: word.id }));
+                                }
+                            }
+                        });
                     }
                 }}
             >
