@@ -17,10 +17,10 @@ import {
 } from './readingSlice';
 
 const FloatingInput = ({ id, label, value, onChange, disabled }) => (
-    <span className="p-float-label" style={{ flex: '1 1 200px', minWidth: '200px' }}>
-        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
-        <label htmlFor={id}>{label}</label>
-    </span>
+    <span className="p-float-label" style={{ flex: '1 1 160px', minWidth: '160px', display: 'inline-flex', flexDirection: 'column' }}>
+    <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
+    <label htmlFor={id}>{label}</label>
+  </span>
 );
 
 const Reading = () => {
@@ -100,29 +100,32 @@ const Reading = () => {
             <div className="space-y-1">
                 {prompts.length === 0 && <div className="text-sm text-gray-500 italic">No prompts yet</div>}
                 {prompts.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+                    <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", gap: "0.25rem", marginTop: "0.25rem"}}>
+                        <span className="text-gray-500" style={{ fontSize: "0.8rem" }}>●</span>
+
                         <span
-                            className="cursor-pointer text-blue-600 hover:text-blue-800 truncate mr-2 flex-1"
+                            className="cursor-pointer text-blue-600 hover:text-blue-800 truncate flex-1"
+                            style={{ margin: "0 15px" }}
                             onClick={() => redirectToPerplexity(p.prompt)}
                             title="Click to search on Perplexity"
                         >
                             {p.prompt}
                         </span>
-                        <div className="flex gap-1 items-center">
-                            <Button
-                                icon="pi pi-external-link"
-                                className="p-button-info p-button-sm"
-                                onClick={() => redirectToPerplexity(p.prompt)}
-                                tooltip="Open in Perplexity"
-                            />
-                            <Button
-                                icon="pi pi-trash"
-                                className="p-button-danger p-button-sm"
-                                onClick={() => handleDeletePrompt(p.id)}
-                                tooltip="Delete prompt"
-                            />
-                        </div>
+
+                        <Button
+                            icon="pi pi-external-link"
+                            className="p-button-info p-button-sm"
+                            onClick={() => redirectToPerplexity(p.prompt)}
+                            tooltip="Open in Perplexity"
+                        />
+                        <Button
+                            icon="pi pi-trash"
+                            className="p-button-danger p-button-sm"
+                            onClick={() => handleDeletePrompt(p.id)}
+                            tooltip="Delete prompt"
+                        />
                     </div>
+
                 ))}
             </div>
         );
@@ -138,37 +141,41 @@ const Reading = () => {
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        handleAddPrompt(rowData.id, false); // no redirect on Enter either
+                        handleAddPrompt(rowData.id, false);
                     }
                 }}
             />
+            <span style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.5rem', margin: '0 12px', userSelect: 'none', flexShrink: 0 }}>|</span>
             <Button
                 icon="pi pi-plus"
                 label="Add"
                 className="p-button-success p-button-sm"
-                onClick={() => handleAddPrompt(rowData.id, false)} // no redirect on Add button
+                onClick={() => handleAddPrompt(rowData.id, false)}
             />
         </div>
     );
 
     const header = (
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="p-d-flex p-ai-center p-flex-wrap" style={{ gap: '0.5rem', flex: '1 1 600px', minWidth: '300px' }}>
             <FloatingInput
+                style={{ flex: '1 1 140px', minWidth: '140px' }}
                 id="newTheme"
                 label="Reading Theme"
                 value={newReading.theme}
                 onChange={(e) => setNewReading({ theme: e.target.value })}
             />
+            <span style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.5rem', margin: '0 12px', userSelect: 'none', flexShrink: 0 }}>||</span>
+
             <Button
-                label="Add Reading"
+                label="Add Theme"
                 icon="pi pi-plus"
                 onClick={handleAddReading}
                 disabled={!newReading.theme.trim()}
-                className="p-button-primary"
-                style={{ flex: '0 0 auto' }}
+                className="p-button-success" style={{ flex: '0 0 auto' }}
             />
         </div>
     );
+
 
     const cmItems = [
         {
