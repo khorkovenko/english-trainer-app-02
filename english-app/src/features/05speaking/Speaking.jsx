@@ -20,8 +20,8 @@ const FloatingInput = ({ id, label, value, onChange, disabled }) => (
     <span
         className="p-float-label"
         style={{
-            flex: '1 1 160px',
-            minWidth: '160px',
+            flex: '1 1 200px',
+            minWidth: '200px',
             display: 'inline-flex',
             flexDirection: 'column'
         }}
@@ -80,7 +80,11 @@ export default function Speaking() {
             })
             .catch((err) => {
                 console.error(err);
-                toastRef.current?.show({ severity: 'error', summary: 'Error', detail: err.message || 'Failed to add speaking or prompt' });
+                toastRef.current?.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: err.message || 'Failed to add speaking or prompt'
+                });
             });
     };
 
@@ -107,7 +111,10 @@ export default function Speaking() {
         confirmDialog({
             message: 'Delete this prompt?',
             acceptClassName: 'p-button-danger',
-            accept: () => dispatch(deleteSpeakingPrompt({ promptId, userId: user.id })).then(() => dispatch(fetchSpeaking(user.id)))
+            accept: () =>
+                dispatch(deleteSpeakingPrompt({ promptId, userId: user.id })).then(() =>
+                    dispatch(fetchSpeaking(user.id))
+                )
         });
     };
 
@@ -117,16 +124,27 @@ export default function Speaking() {
             header: 'Confirm Delete',
             icon: 'pi pi-exclamation-triangle',
             acceptClassName: 'p-button-danger',
-            accept: () => dispatch(deleteSpeaking({ speakingId: speaking.id, userId: user.id })).then(() => dispatch(fetchSpeaking(user.id)))
+            accept: () =>
+                dispatch(deleteSpeaking({ speakingId: speaking.id, userId: user.id })).then(() =>
+                    dispatch(fetchSpeaking(user.id))
+                )
         });
     };
 
     const redirectToPerplexity = (speakingId, prompt) => {
         const topic = speaking.find((s) => s.id === speakingId)?.topic || '';
         window.open(
-            `https://www.perplexity.ai/?q=${encodeURIComponent('Accordingly to this topic: ' + topic + ' generate prompt ' + prompt)}`,
+            `https://www.perplexity.ai/?q=${encodeURIComponent(
+                'Accordingly to this topic: ' + topic + ' generate prompt ' + prompt
+            )}`,
             '_blank'
         );
+    };
+
+    const redirectToChatGPT = (topic, prompt) => {
+        const chatPrompt = `Based on the speaking topic "${topic}", respond to this prompt: ${prompt}`;
+        const encodedPrompt = encodeURIComponent(chatPrompt);
+        window.open(`https://chat.openai.com/?model=gpt-4&prompt=${encodedPrompt}`, '_blank');
     };
 
     const promptsBody = (rowData) => {
@@ -138,7 +156,7 @@ export default function Speaking() {
                     <div className="text-sm text-gray-500 italic">No prompts yet</div>
                 )}
                 {prompts.map((p) => {
-                    const shortCaption = p.prompt.length > 20 ? p.prompt.slice(0, 50) + '...' : p.prompt;
+                    const shortCaption = p.prompt.length > 50 ? p.prompt.slice(0, 50) + '...' : p.prompt;
 
                     return (
                         <div
@@ -162,14 +180,22 @@ export default function Speaking() {
                             </span>
                             <Tooltip target={`#prompt-${p.id}`} content={p.prompt} />
                             <Button
+                                icon="pi pi-comments"
+                                className="p-button-help p-button-sm"
+                                onClick={() => redirectToChatGPT(rowData.topic, p.prompt)}
+                                tooltip="Send to ChatGPT"
+                            />
+                            <Button
                                 icon="pi pi-external-link"
                                 className="p-button-info p-button-sm"
                                 onClick={() => redirectToPerplexity(rowData.id, p.prompt)}
+                                tooltip="Send to Perplexity"
                             />
                             <Button
                                 icon="pi pi-trash"
                                 className="p-button-danger p-button-sm"
                                 onClick={() => handleDeletePrompt(p.id)}
+                                tooltip="Delete Prompt"
                             />
                         </div>
                     );
