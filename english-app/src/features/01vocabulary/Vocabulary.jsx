@@ -145,14 +145,25 @@ const Vocabulary = () => {
         if (user?.id) dispatch(fetchWordsByUserId(user.id));
     };
 
-    const associationBodyTemplate = (rowData) =>
-        isValidUrl(rowData.association) ? (
-            <div className="association-image-wrapper">
-                <Image src={rowData.association} alt={rowData.word} width="60" preview />
-            </div>
-        ) : (
-            rowData.association
-        );
+    const associationBodyTemplate = (rowData) => {
+        if (isValidUrl(rowData.association)) {
+            return (
+                <div className="association-image-wrapper">
+                    <Image
+                        src={rowData.association}
+                        alt={rowData.word}
+                        width="60"
+                        preview
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.outerHTML = `<span style="color:red;font-size:0.9rem;">Image not found</span>`;
+                        }}
+                    />
+                </div>
+            );
+        }
+        return rowData.association;
+    };
 
     function isClickInsideAssociationImage(target) {
         if (!target) return false;
