@@ -404,7 +404,15 @@ const WordModal = ({ wordData, onClose, visible }) => {
             {renderFinalSummary()}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', gap: '0.5rem' }}>
-                <Button label="Restart" onClick={() => { clickSound.current.play(); startNewGame(); }} />
+                <Button
+                    label="Restart"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                        e.currentTarget.blur();
+                        clickSound.current.play();
+                        startNewGame();
+                    }}
+                />
                 <Button label="Close" onClick={() => { clickSound.current.play(); onClose(); }} />
             </div>
         </Dialog>
