@@ -6,40 +6,45 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
-import { ContextMenu } from 'primereact/contextmenu';
 import { fetchAuthUser } from '../loginModal/authSlice';
 import {
     fetchReadings,
     saveReading,
     saveReadingPrompt,
     deleteReadingPrompt,
-    deleteReading,
+    deleteReading
 } from './readingSlice';
 
 const FloatingInput = ({ id, label, value, onChange, disabled }) => (
-    <span className="p-float-label" style={{ flex: '1 1 160px', minWidth: '160px', display: 'inline-flex', flexDirection: 'column' }}>
+    <span
+        className="p-float-label"
+        style={{
+            flex: '1 1 160px',
+            minWidth: '160px',
+            display: 'inline-flex',
+            flexDirection: 'column'
+        }}
+    >
     <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
     <label htmlFor={id}>{label}</label>
   </span>
 );
 
-const Reading = () => {
+export default function Reading() {
     const dispatch = useDispatch();
-    const toast = useRef(null);
-    const contextMenu = useRef(null);
+    const toastRef = useRef(null);
+
     const { user } = useSelector((state) => state.auth);
     const { readings, error } = useSelector((state) => state.reading);
 
     const [newReading, setNewReading] = useState({ theme: '' });
-    const [selectedReading, setSelectedReading] = useState(null);
     const inputRefs = useRef({});
 
     useEffect(() => {
         if (!user?.id) {
             dispatch(fetchAuthUser())
                 .unwrap()
-                .then((res) => dispatch(fetchReadings(res.id)))
-                .catch((err) => console.error('Auth error:', err));
+                .then((res) => dispatch(fetchReadings(res.id)));
         } else {
             dispatch(fetchReadings(user.id));
         }
@@ -47,10 +52,20 @@ const Reading = () => {
 
     const handleAddReading = () => {
         if (!newReading.theme.trim()) {
-            toast.current?.show({ severity: 'warn', summary: 'Validation', detail: 'Theme is required' });
+            toastRef.current?.show({ severity: 'warn', summary: 'Validation', detail: 'Theme is required' });
             return;
         }
-        dispatch(saveReading({ userId: user.id, reading: newReading }));
+        dispatch(saveReading({ userId: user.id, reading: newReading }))
+            .unwrap()
+            .then((savedReading) => {
+                dispatch(
+                    saveReadingPrompt({
+                        readingId: savedReading.id,
+                        prompt: 'First default prompt',
+                        userId: user.id
+                    })
+                );
+            });
         setNewReading({ theme: '' });
     };
 
@@ -64,11 +79,11 @@ const Reading = () => {
             .then(() => {
                 if (inputRef) inputRef.value = '';
                 if (redirect) {
-                    window.open(`https://www.perplexity.ai/?q=${encodeURIComponent(text)}`, '_blank');
+                    redirectToPerplexity(readingId, text);
                 }
             })
             .catch(() =>
-                toast.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to add prompt' })
+                toastRef.current?.show({ severity: 'error', summary: 'Error', detail: 'Failed to add prompt' })
             );
     };
 
@@ -76,7 +91,7 @@ const Reading = () => {
         confirmDialog({
             message: 'Delete this prompt?',
             acceptClassName: 'p-button-danger',
-            accept: () => dispatch(deleteReadingPrompt({ promptId, userId: user.id })),
+            accept: () => dispatch(deleteReadingPrompt({ promptId, userId: user.id }))
         });
     };
 
@@ -86,56 +101,65 @@ const Reading = () => {
             header: 'Confirm Delete',
             icon: 'pi pi-exclamation-triangle',
             acceptClassName: 'p-button-danger',
-            accept: () => dispatch(deleteReading({ readingId: reading.id, userId: user.id })),
+            accept: () => dispatch(deleteReading({ readingId: reading.id, userId: user.id }))
         });
     };
 
-    const redirectToPerplexity = (prompt) => {
-        window.open(`https://www.perplexity.ai/?q=${encodeURIComponent(prompt)}`, '_blank');
+    const redirectToPerplexity = (readingId, prompt) => {
+        const theme = readings.find((r) => r.id === readingId)?.theme || '';
+        window.open(
+            `https://www.perplexity.ai/?q=${encodeURIComponent(theme + ' generate for ' + prompt)}`,
+            '_blank'
+        );
     };
 
     const promptsBody = (rowData) => {
         const prompts = Array.isArray(rowData.reading_prompts) ? rowData.reading_prompts : [];
         return (
             <div className="space-y-1">
-                {prompts.length === 0 && <div className="text-sm text-gray-500 italic">No prompts yet</div>}
+                {prompts.length === 0 && (
+                    <div className="text-sm text-gray-500 italic">No prompts yet</div>
+                )}
                 {prompts.map((p) => (
-                    <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", gap: "0.25rem", marginTop: "0.25rem"}}>
-                        <span className="text-gray-500" style={{ fontSize: "0.8rem" }}>●</span>
-
+                    <div
+                        key={p.id}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            marginTop: '0.25rem'
+                        }}
+                    >
+            <span className="text-gray-500" style={{ fontSize: '0.8rem' }}>
+              ●
+            </span>
                         <span
                             className="cursor-pointer text-blue-600 hover:text-blue-800 truncate flex-1"
-                            style={{ margin: "0 15px" }}
-                            onClick={() => redirectToPerplexity(p.prompt)}
-                            title="Click to search on Perplexity"
+                            style={{ margin: '0 15px' }}
+                            onClick={() => redirectToPerplexity(rowData.id, p.prompt)}
                         >
-                            {p.prompt}
-                        </span>
-
+              {p.prompt}
+            </span>
                         <Button
                             icon="pi pi-external-link"
                             className="p-button-info p-button-sm"
-                            onClick={() => redirectToPerplexity(p.prompt)}
-                            tooltip="Open in Perplexity"
+                            onClick={() => redirectToPerplexity(rowData.id, p.prompt)}
                         />
                         <Button
                             icon="pi pi-trash"
                             className="p-button-danger p-button-sm"
                             onClick={() => handleDeletePrompt(p.id)}
-                            tooltip="Delete prompt"
                         />
                     </div>
-
                 ))}
             </div>
         );
     };
 
     const promptInputBody = (rowData) => (
-        <div className="flex gap-2 items-center">
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
             <InputText
                 ref={(el) => el && (inputRefs.current[rowData.id] = el)}
-                type="text"
                 placeholder="Enter new prompt"
                 className="flex-1"
                 onKeyDown={(e) => {
@@ -145,7 +169,16 @@ const Reading = () => {
                     }
                 }}
             />
-            <span style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.5rem', margin: '0 12px', userSelect: 'none', flexShrink: 0 }}>|</span>
+            <span
+                style={{
+                    color: 'var(--primary-color)',
+                    fontWeight: 'bold',
+                    fontSize: '1.5rem',
+                    margin: '0 12px'
+                }}
+            >
+        |
+      </span>
             <Button
                 icon="pi pi-plus"
                 label="Add"
@@ -156,43 +189,41 @@ const Reading = () => {
     );
 
     const header = (
-        <div className="p-d-flex p-ai-center p-flex-wrap" style={{ gap: '0.5rem', flex: '1 1 600px', minWidth: '300px' }}>
+        <div
+            className="p-d-flex p-ai-center p-flex-wrap"
+            style={{ gap: '0.5rem', flex: '1 1 600px' }}
+        >
             <FloatingInput
-                style={{ flex: '1 1 140px', minWidth: '140px' }}
                 id="newTheme"
                 label="Reading Theme"
                 value={newReading.theme}
                 onChange={(e) => setNewReading({ theme: e.target.value })}
             />
-            <span style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.5rem', margin: '0 12px', userSelect: 'none', flexShrink: 0 }}>||</span>
-
+            <span
+                style={{
+                    color: 'var(--primary-color)',
+                    fontWeight: 'bold',
+                    fontSize: '1.5rem',
+                    margin: '0 12px'
+                }}
+            >
+        ||
+      </span>
             <Button
                 label="Add Theme"
                 icon="pi pi-plus"
                 onClick={handleAddReading}
                 disabled={!newReading.theme.trim()}
-                className="p-button-success" style={{ flex: '0 0 auto' }}
+                className="p-button-success"
             />
         </div>
     );
 
-
-    const cmItems = [
-        {
-            label: 'Delete Reading',
-            icon: 'pi pi-trash',
-            command: () => selectedReading && handleDeleteReading(selectedReading),
-        },
-    ];
-
     return (
         <div className="p-4">
-            <Toast ref={toast} />
+            <Toast ref={toastRef} />
             <ConfirmDialog />
-            <ContextMenu model={cmItems} ref={contextMenu} />
-
             <h2 className="text-xl font-semibold mb-4">📖 Reading Practice</h2>
-
             <DataTable
                 value={readings}
                 dataKey="id"
@@ -202,16 +233,12 @@ const Reading = () => {
                 rows={10}
                 rowsPerPageOptions={[10, 25, 50]}
                 header={header}
-                selectionMode="single"
-                contextMenuSelection={selectedReading}
-                onContextMenuSelectionChange={(e) => setSelectedReading(e.value)}
-                onContextMenu={(e) => contextMenu.current.show(e.originalEvent)}
+                onContextMenu={(e) => handleDeleteReading(e.data)}
             >
                 <Column field="theme" header="Theme" className="font-semibold" style={{ width: '30%' }} />
                 <Column header="Prompts" body={promptsBody} style={{ width: '40%' }} />
                 <Column header="Add Prompt" body={promptInputBody} style={{ width: '30%' }} />
             </DataTable>
-
             {error && (
                 <div className="mt-4 p-3 bg-red-100 border-l-4 border-red-500 text-red-700">
                     <strong>Error:</strong> {error}
@@ -219,6 +246,4 @@ const Reading = () => {
             )}
         </div>
     );
-};
-
-export default Reading;
+}
