@@ -73,3 +73,12 @@ create table writing_prompts (
                                  updated_at timestamp with time zone default now()
 );
 
+create table mistakes (
+                          id uuid primary key default uuid_generate_v4(),
+                          vocabulary text[],
+                          grammar text[],
+                          reading text[],
+                          listening text[],
+                          speaking text[],
+                          writing text[]
+);
