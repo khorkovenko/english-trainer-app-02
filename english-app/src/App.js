@@ -15,6 +15,7 @@ import { Accordion, AccordionTab } from 'primereact/accordion'
 import { TabPanel, TabView } from 'primereact/tabview'
 
 import LoginModal from './features/loginModal/LoginModal'
+import AddMistakeModal from './features/07mistakes/AddMistakeModal'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { supabaseClient } from './app/supabaseClient'
 
@@ -23,13 +24,15 @@ function App() {
     const { user, status } = useSelector(state => state.auth)
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-    const [modalVisible, setModalVisible] = useState(false)
+    const [loginModalVisible, setLoginModalVisible] = useState(false)
 
-    // New: track selected tab index
     const [selectedIndex, setSelectedIndex] = useState(() => {
         const stored = localStorage.getItem('selectedTabIndex')
         return stored !== null ? parseInt(stored, 10) : 0
     })
+
+    const [mistakeModalVisible, setMistakeModalVisible] = useState(false)
+    const [mistakeType, setMistakeType] = useState(null)
 
     useEffect(() => {
         dispatch(fetchAuthUser())
@@ -51,9 +54,9 @@ function App() {
 
     useEffect(() => {
         if (status === 'succeeded' && !user) {
-            setModalVisible(true)
+            setLoginModalVisible(true)
         } else if (status === 'succeeded' && user) {
-            setModalVisible(false)
+            setLoginModalVisible(false)
         }
     }, [user, status])
 
@@ -68,17 +71,31 @@ function App() {
         },
     ]
 
+    // Open mistake modal and set type
+    const openMistakeModal = (type) => {
+        if (!type || !['vocabulary','grammar','reading','listening','speaking','writing','mistakes'].includes(type)) return;
+        setMistakeType(type)
+        setMistakeModalVisible(true)
+    }
+
+
+    // Wrap content to attach context menu
+    const wrapWithContextMenu = (Component, type) => (
+        <div onContextMenu={(e) => { e.preventDefault(); openMistakeModal(type) }}>
+            <Component />
+        </div>
+    )
+
     const tabs = [
-        { header: 'Vocabulary', content: <Vocabulary /> },
-        { header: 'Grammar', content: <Grammar /> },
-        { header: 'Reading', content: <Reading /> },
-        { header: 'Listening', content: <Listening /> },
-        { header: 'Speaking', content: <Speaking /> },
-        { header: 'Writing', content: <Writing /> },
-        { header: 'Mistakes', content: <Mistakes /> },
+        { header: 'Vocabulary', content: wrapWithContextMenu(Vocabulary, 'vocabulary') },
+        { header: 'Grammar', content: wrapWithContextMenu(Grammar, 'grammar') },
+        { header: 'Reading', content: wrapWithContextMenu(Reading, 'reading') },
+        { header: 'Listening', content: wrapWithContextMenu(Listening, 'listening') },
+        { header: 'Speaking', content: wrapWithContextMenu(Speaking, 'speaking') },
+        { header: 'Writing', content: wrapWithContextMenu(Writing, 'writing') },
+        { header: 'Mistakes', content: wrapWithContextMenu(Mistakes, 'mistakes') },
     ]
 
-    // New: handle tab change and store it
     const handleTabChange = (e) => {
         setSelectedIndex(e.index)
         localStorage.setItem('selectedTabIndex', e.index)
@@ -92,15 +109,19 @@ function App() {
                 </div>
             )}
 
-            <LoginModal visible={modalVisible} />
+            <LoginModal visible={loginModalVisible} />
 
             {status === 'succeeded' && user && (
                 <>
                     <Menubar model={menuItems} />
                     <div className="p-4 flex-grow overflow-auto">
                         {isMobile ? (
-                            <Accordion multiple activeIndex={[selectedIndex]} onTabChange={(e) => handleTabChange({ index: e.index[0] })}>
-                                {tabs.map(({ header, content }, i) => (
+                            <Accordion
+                                multiple
+                                activeIndex={[selectedIndex]}
+                                onTabChange={(e) => handleTabChange({ index: e.index[0] })}
+                            >
+                                {tabs.map(({ header, content }) => (
                                     <AccordionTab key={header} header={header}>
                                         {content}
                                     </AccordionTab>
@@ -118,6 +139,12 @@ function App() {
                     </div>
                 </>
             )}
+
+            <AddMistakeModal
+                visible={mistakeModalVisible}
+                onHide={() => setMistakeModalVisible(false)}
+                initialType={mistakeType}
+            />
         </div>
     )
 }
