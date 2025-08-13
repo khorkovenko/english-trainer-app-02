@@ -2,10 +2,6 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchMistakes, saveMistakes, addMistake } from './mistakesSlice'
-import { InputText } from 'primereact/inputtext'
-import { Button } from 'primereact/button'
-import { DataTable } from 'primereact/datatable'
-import { Column } from 'primereact/column'
 
 const mistakeTypes = [
     'vocabulary',
@@ -44,61 +40,104 @@ const Mistakes = () => {
     })
 
     return (
-        <div className="p-4 space-y-4">
-            <h2 className="text-xl font-semibold">❌ Review Mistakes</h2>
-            <p>Analyze your mistakes and learn from them here.</p>
+        <div
+        >
+            <h2 style={{ marginBottom: '0.5rem' }}>❌ Review Mistakes</h2>
+            <p style={{ marginBottom: '1rem' }}>
+                Analyze your mistakes and learn from them here.
+            </p>
 
             {status === 'loading' && <p>Loading...</p>}
             {status === 'failed' && <p>Error loading mistakes.</p>}
 
-            <div className="grid gap-4">
-                {mistakeTypes.map(type => (
-                    <div key={type} className="flex gap-2 items-center">
-                        <InputText
-                            value={inputs[type]}
-                            onChange={e => setInputs({ ...inputs, [type]: e.target.value })}
-                            placeholder={`Add ${type} mistake...`}
-                            style={{ flex: 1 }}
-                        />
-                        <Button
-                            label="Add"
-                            icon="pi pi-plus"
-                            onClick={() => handleAdd(type)}
-                            disabled={!inputs[type].trim()}
-                        />
-                    </div>
-                ))}
-            </div>
-
-            <DataTable value={rows} responsiveLayout="scroll">
-                {mistakeTypes.map(type => (
-                    <Column
-                        key={type}
-                        field={type}
-                        header={type.charAt(0).toUpperCase() + type.slice(1)}
-                        body={(rowData) => {
-                            const value = rowData[type]
-                            if (!value) return <span>&nbsp;</span>
-                            return (
-                                <span
-                                    className="cursor-pointer text-blue-500"
-                                    onDoubleClick={() => {
-                                        const prompt = encodeURIComponent(
-                                            `Help me practice correcting this mistake: "${value}"`
-                                        )
-                                        window.open(
-                                            `https://chat.openai.com/?model=gpt-4&prompt=${prompt}`,
-                                            '_blank'
-                                        )
+            <div style={{ flex: 1, overflow: 'auto' }}>
+                <table
+                    style={{
+                        width: '100%',
+                        borderCollapse: 'collapse',
+                        tableLayout: 'fixed',
+                        minWidth: '100%',
+                    }}
+                >
+                    <thead>
+                    <tr>
+                        {mistakeTypes.map((type) => (
+                            <th
+                                key={type}
+                                style={{
+                                    border: '1px solid #ddd',
+                                    padding: '0.5rem',
+                                    background: '#f9f9f9',
+                                    position: 'sticky',
+                                    top: 0,
+                                    zIndex: 1,
+                                }}
+                            >
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        value={inputs[type]}
+                                        placeholder={`Add ${type} mistake...`}
+                                        onChange={(e) =>
+                                            setInputs({ ...inputs, [type]: e.target.value })
+                                        }
+                                        style={{ flex: 1 }}
+                                    />
+                                    <button
+                                        onClick={() => handleAdd(type)}
+                                        disabled={!inputs[type].trim()}
+                                        style={{
+                                            background: '#22c55e',
+                                            color: 'white',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: '0 0.5rem',
+                                        }}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </th>
+                        ))}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {rows.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                            {mistakeTypes.map((type) => (
+                                <td
+                                    key={type}
+                                    style={{
+                                        border: '1px solid #ddd',
+                                        padding: '0.5rem',
+                                        textAlign: 'left',
                                     }}
                                 >
-                  {value}
-                </span>
-                            )
-                        }}
-                    />
-                ))}
-            </DataTable>
+                                    {row[type] ? (
+                                        <span
+                                            style={{ cursor: 'pointer', color: '#3b82f6' }}
+                                            onDoubleClick={() => {
+                                                const prompt = encodeURIComponent(
+                                                    `Help me practice correcting this mistake: "${row[type]}"`
+                                                )
+                                                window.open(
+                                                    `https://chat.openai.com/?model=gpt-4&prompt=${prompt}`,
+                                                    '_blank'
+                                                )
+                                            }}
+                                        >
+                                                {row[type]}
+                                            </span>
+                                    ) : (
+                                        '\u00A0'
+                                    )}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     )
 }
