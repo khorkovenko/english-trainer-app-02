@@ -75,10 +75,15 @@ create table writing_prompts (
 
 create table mistakes (
                           id uuid primary key default uuid_generate_v4(),
-                          vocabulary text[],
-                          grammar text[],
-                          reading text[],
-                          listening text[],
-                          speaking text[],
-                          writing text[]
+                          user_id uuid not null references auth.users(id) on delete cascade,
+                          vocabulary text[] default '{}',
+                          grammar text[] default '{}',
+                          reading text[] default '{}',
+                          listening text[] default '{}',
+                          speaking text[] default '{}',
+                          writing text[] default '{}',
+                          created_at timestamp with time zone default timezone('utc'::text, now()),
+                          updated_at timestamp with time zone default timezone('utc'::text, now())
 );
+
+create unique index unique_user_mistakes on mistakes(user_id);

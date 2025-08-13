@@ -1,4 +1,3 @@
-// features/mistakes/mistakesSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { supabaseClient } from '../../app/supabaseClient'
 
@@ -12,36 +11,79 @@ const mistakeTypes = [
 ]
 const maxMistakes = 30
 
-// Fetch mistakes from Supabase
+// Fetch mistakes for current auth user
 export const fetchMistakes = createAsyncThunk(
     'mistakes/fetchMistakes',
-    async () => {
+    async (_, { rejectWithValue }) => {
+        const {
+            data: { session },
+            error: sessionError
+        } = await supabaseClient.auth.getSession()
+        if (sessionError) return rejectWithValue(sessionError.message)
+
+        const user = session?.user
+        if (!user) return rejectWithValue('No authenticated user')
+
+        // Try to get the existing row for this user
         const { data, error } = await supabaseClient
             .from('mistakes')
             .select('*')
-            .single()
+            .eq('user_id', user.id)
+            .maybeSingle()
 
-        if (error) throw error
+        if (error) return rejectWithValue(error.message)
 
+        // If no row exists yet, insert an empty one
+        if (!data) {
+            const emptyRow = {
+                user_id: user.id,
+                vocabulary: [],
+                grammar: [],
+                reading: [],
+                listening: [],
+                speaking: [],
+                writing: []
+            }
+            const { error: insertError } = await supabaseClient
+                .from('mistakes')
+                .insert([emptyRow])
+
+            if (insertError) return rejectWithValue(insertError.message)
+            return emptyRow
+        }
+
+        // Map and limit mistakes
         const mistakesMap = {}
         mistakeTypes.forEach(type => {
             mistakesMap[type] = Array.isArray(data?.[type])
                 ? data[type].slice(0, maxMistakes)
                 : []
         })
+
         return mistakesMap
     }
 )
 
-// Save mistakes to Supabase
+// Save mistakes for current auth user
 export const saveMistakes = createAsyncThunk(
     'mistakes/saveMistakes',
-    async (mistakesMap) => {
+    async (mistakesMap, { rejectWithValue }) => {
+        const {
+            data: { session },
+            error: sessionError
+        } = await supabaseClient.auth.getSession()
+        if (sessionError) return rejectWithValue(sessionError.message)
+
+        const user = session?.user
+        if (!user) return rejectWithValue('No authenticated user')
+
         const { error } = await supabaseClient
             .from('mistakes')
-            .upsert([mistakesMap], { onConflict: 'id' })
+            .upsert([{ user_id: user.id, ...mistakesMap }], {
+                onConflict: 'user_id'
+            })
 
-        if (error) throw error
+        if (error) return rejectWithValue(error.message)
         return mistakesMap
     }
 )
@@ -82,7 +124,7 @@ const mistakesSlice = createSlice({
             })
             .addCase(fetchMistakes.rejected, (state, action) => {
                 state.status = 'failed'
-                state.error = action.error.message
+                state.error = action.payload || action.error.message
             })
             .addCase(saveMistakes.fulfilled, (state, action) => {
                 state.data = action.payload
