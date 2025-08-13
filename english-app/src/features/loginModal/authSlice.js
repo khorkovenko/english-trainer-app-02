@@ -1,15 +1,12 @@
-// src/features/loginModal/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { supabaseClient } from '../../app/supabaseClient'
 
-// Fetch current session and return user or null
 export const fetchAuthUser = createAsyncThunk('auth/fetchUser', async () => {
     const { data, error } = await supabaseClient.auth.getSession()
     if (error) throw error
     return data?.session?.user ?? null
 })
 
-// Sign out user
 export const signOut = createAsyncThunk('auth/signOut', async () => {
     const { error } = await supabaseClient.auth.signOut()
     if (error) throw error
@@ -20,7 +17,7 @@ const authSlice = createSlice({
     name: 'auth',
     initialState: {
         user: null,
-        status: 'idle', // idle | loading | succeeded | failed
+        status: 'idle',
         error: null,
     },
     reducers: {},
