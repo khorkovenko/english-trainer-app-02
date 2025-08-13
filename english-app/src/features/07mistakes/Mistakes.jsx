@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchMistakes, saveMistakes, addMistake } from './mistakesSlice'
+import { InputText } from 'primereact/inputtext'
 
 const mistakeTypes = [
     'vocabulary',
@@ -11,6 +12,22 @@ const mistakeTypes = [
     'speaking',
     'writing'
 ]
+
+// FloatingInput component
+const FloatingInput = ({ id, label, value, onChange, disabled }) => (
+    <span
+        className="p-float-label"
+        style={{
+            flex: '1 1 160px',
+            width: '100px',
+            display: 'inline-flex',
+            flexDirection: 'column'
+        }}
+    >
+        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
+        <label htmlFor={id}>{label}</label>
+    </span>
+)
 
 const Mistakes = () => {
     const dispatch = useDispatch()
@@ -47,9 +64,6 @@ const Mistakes = () => {
                 Analyze your mistakes and learn from them here.
             </p>
 
-            {status === 'loading' && <p>Loading...</p>}
-            {status === 'failed' && <p>Error loading mistakes.</p>}
-
             <div style={{ flex: 1, overflow: 'auto' }}>
                 <table
                     style={{
@@ -73,15 +87,15 @@ const Mistakes = () => {
                                     zIndex: 1,
                                 }}
                             >
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <input
-                                        type="text"
+                                <div style={{ display: 'flex', gap: '0.1rem', justifyContent: 'center', alignItems: 'center'  }}>
+                                    <FloatingInput
+                                        id={`input-${type}`}
+                                        label={`Add ${type} mistake`}
                                         value={inputs[type]}
-                                        placeholder={`Add ${type} mistake...`}
                                         onChange={(e) =>
                                             setInputs({ ...inputs, [type]: e.target.value })
                                         }
-                                        style={{ flex: 1 }}
+                                        disabled={false}
                                     />
                                     <button
                                         onClick={() => handleAdd(type)}
@@ -92,9 +106,12 @@ const Mistakes = () => {
                                             border: 'none',
                                             cursor: 'pointer',
                                             padding: '0 0.5rem',
+                                            height: '2rem',
+                                            alignSelf: 'flex-end',
+                                            borderRadius: '0.25rem',
                                         }}
                                     >
-                                        +
+                                        <i className="pi pi-check"></i>
                                     </button>
                                 </div>
                             </th>
