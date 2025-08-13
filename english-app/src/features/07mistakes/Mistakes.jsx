@@ -1,10 +1,9 @@
-// components/Mistakes.js
-import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { fetchMistakes, saveMistakes, addMistake } from './mistakesSlice'
-import { InputText } from 'primereact/inputtext'
-import { Button } from 'primereact/button'
-import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
+import React, {useEffect, useState} from 'react'
+import {useDispatch, useSelector} from 'react-redux'
+import {fetchMistakes, saveMistakes, addMistake} from './mistakesSlice'
+import {InputText} from 'primereact/inputtext'
+import {Button} from 'primereact/button'
+import {ConfirmDialog, confirmDialog} from 'primereact/confirmdialog'
 
 const mistakeTypes = [
     'vocabulary',
@@ -15,8 +14,7 @@ const mistakeTypes = [
     'writing'
 ]
 
-// FloatingInput component (do not change)
-const FloatingInput = ({ id, label, value, onChange, disabled }) => (
+const FloatingInput = ({id, label, value, onChange, disabled}) => (
     <span
         className="p-float-label"
         style={{
@@ -26,16 +24,16 @@ const FloatingInput = ({ id, label, value, onChange, disabled }) => (
             flexDirection: 'column'
         }}
     >
-        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
+        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full"/>
         <label htmlFor={id}>{label}</label>
     </span>
 )
 
 const Mistakes = () => {
     const dispatch = useDispatch()
-    const { data, status } = useSelector(state => state.mistakes)
+    const {data, status} = useSelector(state => state.mistakes)
     const [inputs, setInputs] = useState(
-        mistakeTypes.reduce((acc, t) => ({ ...acc, [t]: '' }), {})
+        mistakeTypes.reduce((acc, t) => ({...acc, [t]: ''}), {})
     )
     const [search, setSearch] = useState('')
 
@@ -46,12 +44,11 @@ const Mistakes = () => {
     const handleAdd = (type) => {
         const value = inputs[type].trim()
         if (!value) return
-        dispatch(addMistake({ type, value }))
-        dispatch(saveMistakes({ ...data, [type]: [value, ...data[type]] }))
-        setInputs({ ...inputs, [type]: '' })
+        dispatch(addMistake({type, value}))
+        dispatch(saveMistakes({...data, [type]: [value, ...data[type]]}))
+        setInputs({...inputs, [type]: ''})
     }
 
-    // Delete single mistake
     const handleDelete = (type, index) => {
         confirmDialog({
             message: 'Are you sure you want to delete this mistake?',
@@ -60,25 +57,24 @@ const Mistakes = () => {
             accept: () => {
                 const updated = [...data[type]]
                 updated.splice(index, 1)
-                dispatch(saveMistakes({ ...data, [type]: updated }))
+                dispatch(saveMistakes({...data, [type]: updated}))
             }
         })
     }
 
-    // Delete all mistakes
     const handleDeleteAll = () => {
         confirmDialog({
             message: 'Are you sure you want to delete all mistakes?',
             header: 'Confirm Deletion',
             icon: 'pi pi-exclamation-triangle',
             accept: () => {
-                const emptyData = mistakeTypes.reduce((acc, t) => ({ ...acc, [t]: [] }), {})
+                const emptyData = mistakeTypes.reduce((acc, t) => ({...acc, [t]: []}), {})
                 dispatch(saveMistakes(emptyData))
             }
         })
     }
 
-    const rows = Array.from({ length: 30 }, (_, i) => {
+    const rows = Array.from({length: 30}, (_, i) => {
         const row = {}
         mistakeTypes.forEach(type => {
             const filtered = data[type]?.filter(m => m.toLowerCase().includes(search.toLowerCase())) || []
@@ -88,29 +84,30 @@ const Mistakes = () => {
     })
 
     const handleResetInputs = () => {
-        setInputs(mistakeTypes.reduce((acc, t) => ({ ...acc, [t]: '' }), {}))
+        setInputs(mistakeTypes.reduce((acc, t) => ({...acc, [t]: ''}), {}))
         setSearch('')
     }
 
     return (
         <div>
-            <h2 style={{ marginBottom: '0.5rem' }}>❌ Review Mistakes</h2>
-            <p style={{ marginBottom: '1rem' }}>
+            <h2 style={{marginBottom: '0.5rem'}}>❌ Review Mistakes</h2>
+            <p style={{marginBottom: '1rem'}}>
                 Analyze your mistakes and learn from them here.
             </p>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '1rem' }}>
+            <div style={{display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '1rem'}}>
                 <InputText
                     placeholder="Search mistakes..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    style={{ width: '200px' }}
+                    style={{width: '200px'}}
                 />
-                <Button label="Reset Inputs" icon="pi pi-refresh" className="p-button-warning" onClick={handleResetInputs} />
-                <Button label="Delete All" icon="pi pi-trash" severity="danger" onClick={handleDeleteAll} />
+                <Button label="Reset Inputs" icon="pi pi-refresh" className="p-button-warning"
+                        onClick={handleResetInputs}/>
+                <Button label="Delete All" icon="pi pi-trash" severity="danger" onClick={handleDeleteAll}/>
             </div>
 
-            <div style={{ flex: 1, overflow: 'auto' }}>
+            <div style={{flex: 1, overflow: 'auto'}}>
                 <table
                     style={{
                         width: '100%',
@@ -133,13 +130,19 @@ const Mistakes = () => {
                                     zIndex: 1,
                                 }}
                             >
-                                <div style={{ display: 'flex', gap: '0.1rem', justifyContent: 'center', alignItems: 'center', marginTop: '12px'}}>
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '0.1rem',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    marginTop: '12px'
+                                }}>
                                     <FloatingInput
                                         id={`input-${type}`}
                                         label={`${type} mistake`}
                                         value={inputs[type]}
                                         onChange={(e) =>
-                                            setInputs({ ...inputs, [type]: e.target.value })
+                                            setInputs({...inputs, [type]: e.target.value})
                                         }
                                         disabled={false}
                                     />
@@ -167,9 +170,14 @@ const Mistakes = () => {
                                     }}
                                 >
                                     {row[type] ? (
-                                        <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
+                                        }}>
                                             <span
-                                                style={{ cursor: 'pointer', color: '#3b82f6', flex: 1 }}
+                                                style={{cursor: 'pointer', color: '#3b82f6', flex: 1}}
+                                                title={row[type].length > 15 ? row[type] : ''}
                                                 onDoubleClick={() => {
                                                     const prompt = encodeURIComponent(
                                                         `Help me practice correcting this mistake: "${row[type]}"`
@@ -180,7 +188,7 @@ const Mistakes = () => {
                                                     )
                                                 }}
                                             >
-                                                {row[type]}
+                                                {row[type].length > 15 ? row[type].slice(0, 15) + '…' : row[type]}
                                             </span>
                                             <Button
                                                 icon="pi pi-trash"
@@ -199,7 +207,7 @@ const Mistakes = () => {
                 </table>
             </div>
 
-            <ConfirmDialog />
+            <ConfirmDialog/>
         </div>
     )
 }
