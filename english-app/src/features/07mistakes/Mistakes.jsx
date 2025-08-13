@@ -87,6 +87,11 @@ const Mistakes = () => {
         return row
     })
 
+    const handleResetInputs = () => {
+        setInputs(mistakeTypes.reduce((acc, t) => ({ ...acc, [t]: '' }), {}))
+        setSearch('')
+    }
+
     return (
         <div>
             <h2 style={{ marginBottom: '0.5rem' }}>❌ Review Mistakes</h2>
@@ -101,6 +106,7 @@ const Mistakes = () => {
                     onChange={e => setSearch(e.target.value)}
                     style={{ width: '200px' }}
                 />
+                <Button label="Reset Inputs" icon="pi pi-refresh" className="p-button-warning" onClick={handleResetInputs} />
                 <Button label="Delete All" icon="pi pi-trash" severity="danger" onClick={handleDeleteAll} />
             </div>
 
@@ -130,7 +136,7 @@ const Mistakes = () => {
                                 <div style={{ display: 'flex', gap: '0.1rem', justifyContent: 'center', alignItems: 'center', marginTop: '12px'}}>
                                     <FloatingInput
                                         id={`input-${type}`}
-                                        label={`Add ${type} mistake`}
+                                        label={`${type} mistake`}
                                         value={inputs[type]}
                                         onChange={(e) =>
                                             setInputs({ ...inputs, [type]: e.target.value })
