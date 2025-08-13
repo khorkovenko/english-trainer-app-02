@@ -3,7 +3,7 @@ import { Dialog } from 'primereact/dialog'
 import { Button } from 'primereact/button'
 import { Dropdown } from 'primereact/dropdown'
 import { InputText } from 'primereact/inputtext'
-import { useDispatch } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { addMistake, saveMistakes } from './mistakesSlice'
 
 const mistakeTypes = [
@@ -15,8 +15,9 @@ const mistakeTypes = [
     'writing'
 ]
 
-const AddMistakeModal = ({ visible, onHide, data, initialType = null }) => {
+const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
     const dispatch = useDispatch()
+    const mistakesMap = useSelector(state => state.mistakes.data)
     const [selectedType, setSelectedType] = useState(initialType)
     const [value, setValue] = useState('')
 
@@ -24,10 +25,17 @@ const AddMistakeModal = ({ visible, onHide, data, initialType = null }) => {
         setSelectedType(initialType)
     }, [initialType])
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         if (!selectedType || !value.trim()) return
-        dispatch(addMistake({ type: selectedType, value }))
-        dispatch(saveMistakes({ ...data, [selectedType]: [value, ...data[selectedType]] }))
+
+        dispatch(addMistake({ type: selectedType, value: value.trim() }))
+
+        const updatedMistakes = {
+            ...mistakesMap,
+            [selectedType]: [value.trim(), ...(mistakesMap[selectedType] || [])].slice(0, 30)
+        }
+        await dispatch(saveMistakes(updatedMistakes))
+
         setValue('')
         setSelectedType(initialType)
         onHide()

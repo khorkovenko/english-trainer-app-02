@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchAuthUser, signOut } from './features/loginModal/authSlice'
 
@@ -25,15 +25,14 @@ function App() {
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
     const [loginModalVisible, setLoginModalVisible] = useState(false)
-
     const [selectedIndex, setSelectedIndex] = useState(() => {
         const stored = localStorage.getItem('selectedTabIndex')
         return stored !== null ? parseInt(stored, 10) : 0
     })
-
     const [mistakeModalVisible, setMistakeModalVisible] = useState(false)
     const [mistakeType, setMistakeType] = useState(null)
 
+    // Fetch user
     useEffect(() => {
         dispatch(fetchAuthUser())
 
@@ -46,20 +45,20 @@ function App() {
         }
     }, [dispatch])
 
+    // Handle window resize
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768)
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
+    // Show login modal if not authenticated
     useEffect(() => {
-        if (status === 'succeeded' && !user) {
-            setLoginModalVisible(true)
-        } else if (status === 'succeeded' && user) {
-            setLoginModalVisible(false)
-        }
+        if (status === 'succeeded' && !user) setLoginModalVisible(true)
+        else if (status === 'succeeded' && user) setLoginModalVisible(false)
     }, [user, status])
 
+    // Menu
     const menuItems = [
         { label: 'English Trainer', icon: 'pi pi-book' },
         {
@@ -71,35 +70,41 @@ function App() {
         },
     ]
 
-    // Open mistake modal and set type
     const openMistakeModal = (type) => {
-        if (!type || !['vocabulary','grammar','reading','listening','speaking','writing','mistakes'].includes(type)) return;
+        if (!type) return
         setMistakeType(type)
         setMistakeModalVisible(true)
     }
 
-
-    // Wrap content to attach context menu
-    const wrapWithContextMenu = (Component, type) => (
-        <div onContextMenu={(e) => { e.preventDefault(); openMistakeModal(type) }}>
-            <Component />
-        </div>
-    )
-
-    const tabs = [
-        { header: 'Vocabulary', content: wrapWithContextMenu(Vocabulary, 'vocabulary') },
-        { header: 'Grammar', content: wrapWithContextMenu(Grammar, 'grammar') },
-        { header: 'Reading', content: wrapWithContextMenu(Reading, 'reading') },
-        { header: 'Listening', content: wrapWithContextMenu(Listening, 'listening') },
-        { header: 'Speaking', content: wrapWithContextMenu(Speaking, 'speaking') },
-        { header: 'Writing', content: wrapWithContextMenu(Writing, 'writing') },
-        { header: 'Mistakes', content: wrapWithContextMenu(Mistakes, 'mistakes') },
-    ]
+    // Stable tabs reference
+    const tabs = useMemo(() => [
+        { header: 'Vocabulary', type: 'vocabulary', content: <Vocabulary /> },
+        { header: 'Grammar', type: 'grammar', content: <Grammar /> },
+        { header: 'Reading', type: 'reading', content: <Reading /> },
+        { header: 'Listening', type: 'listening', content: <Listening /> },
+        { header: 'Speaking', type: 'speaking', content: <Speaking /> },
+        { header: 'Writing', type: 'writing', content: <Writing /> },
+        { header: 'Mistakes', type: 'mistakes', content: <Mistakes /> },
+    ], [])
 
     const handleTabChange = (e) => {
         setSelectedIndex(e.index)
         localStorage.setItem('selectedTabIndex', e.index)
     }
+
+    // Global shortcut listener
+    useEffect(() => {
+        const handleShortcut = (e) => {
+            if (e.button === 0 && e.ctrlKey && e.altKey) {
+                e.preventDefault()
+                const type = tabs[selectedIndex]?.type
+                if (type) openMistakeModal(type)
+            }
+        }
+
+        window.addEventListener('mousedown', handleShortcut)
+        return () => window.removeEventListener('mousedown', handleShortcut)
+    }, [selectedIndex, tabs])
 
     return (
         <div className="h-screen flex flex-col">
