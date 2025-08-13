@@ -87,7 +87,7 @@ const Mistakes = () => {
                                     zIndex: 1,
                                 }}
                             >
-                                <div style={{ display: 'flex', gap: '0.1rem', justifyContent: 'center', alignItems: 'center'  }}>
+                                <div style={{ display: 'flex', gap: '0.1rem', justifyContent: 'center', alignItems: 'center', marginTop: '12px'}}>
                                     <FloatingInput
                                         id={`input-${type}`}
                                         label={`Add ${type} mistake`}
