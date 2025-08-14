@@ -95,16 +95,18 @@ function App() {
     // Global shortcut listener
     useEffect(() => {
         const handleShortcut = (e) => {
-            if (e.button === 0 && e.ctrlKey && e.altKey) {
-                e.preventDefault()
-                const type = tabs[selectedIndex]?.type
-                if (type) openMistakeModal(type)
+            if (e.ctrlKey) {
+                e.preventDefault(); // stops the default menu immediately
+                const type = tabs[selectedIndex]?.type;
+                if (type) openMistakeModal(type);
             }
-        }
+        };
 
-        window.addEventListener('mousedown', handleShortcut)
-        return () => window.removeEventListener('mousedown', handleShortcut)
-    }, [selectedIndex, tabs])
+        window.addEventListener('contextmenu', handleShortcut); // catch right-click
+        return () => window.removeEventListener('contextmenu', handleShortcut);
+    }, [selectedIndex, tabs]);
+
+
 
     return (
         <div className="h-screen flex flex-col">
