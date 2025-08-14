@@ -17,6 +17,27 @@ const mistakeTypes = [
 
 const mistakeTypeOptions = mistakeTypes.map(t => ({ label: t, value: t }))
 
+const FloatingInput = ({ id, label, value, onChange, disabled }) => (
+    <span
+        className="p-float-label"
+        style={{
+            flex: '1 1 auto',
+            width: '100%',
+            display: 'inline-flex',
+            flexDirection: 'column'
+        }}
+    >
+        <InputText
+            id={id}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            className="w-full"
+        />
+        <label htmlFor={id}>{label}</label>
+    </span>
+)
+
 const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
     const dispatch = useDispatch()
     const mistakesMap = useSelector(state => state.mistakes.data)
@@ -48,8 +69,10 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
             header="Add Mistake"
             visible={visible}
             onHide={onHide}
-            style={{ width: '700px' }} // ⬅ wider modal
+            style={{ width: '750px' }}
         >
+            {/* Select Button */}
+            <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column'}}>
             <div className="card flex justify-content-center" style={{ margin: '1rem 0' }}>
                 <SelectButton
                     id="type"
@@ -57,24 +80,24 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
                     onChange={(e) => setSelectedType(e.value)}
                     options={mistakeTypeOptions}
                     multiple={false}
-
                     itemTemplate={(option) => (
-                        <div>
-                            {option.label}
-                        </div>
+                        <div style={{ textTransform: 'capitalize' }}>{option.label}</div>
                     )}
                 />
             </div>
-            <div className="p-field" style={{ marginBottom: '1rem' }}>
-                <label htmlFor="value">Value</label>
-                <InputText
+
+            {/* Floating Input */}
+            <div style={{ margin: '1rem 0' }}>
+                <FloatingInput
                     id="value"
+                    label="Value"
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
-                    placeholder="Enter mistake"
-                    className="w-full"
                 />
             </div>
+            </div>
+
+            {/* Action Buttons */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                 <Button label="Close" className="p-button-secondary" onClick={onHide} />
                 <Button
