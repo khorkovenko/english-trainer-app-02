@@ -22,7 +22,7 @@ const FloatingInput = ({ id, label, value, onChange, disabled }) => (
         className="p-float-label"
         style={{
             flex: '1 1 auto',
-            width: '100%', // ensure full width
+            width: '100%',
             display: 'flex',
             flexDirection: 'column'
         }}
@@ -41,11 +41,13 @@ const FloatingInput = ({ id, label, value, onChange, disabled }) => (
 const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
     const dispatch = useDispatch()
     const mistakesMap = useSelector(state => state.mistakes.data)
-    const [selectedType, setSelectedType] = useState(initialType)
+
+    // Use first type as default if initialType is null
+    const [selectedType, setSelectedType] = useState(initialType || mistakeTypes[0])
     const [value, setValue] = useState('')
 
     useEffect(() => {
-        setSelectedType(initialType)
+        setSelectedType(initialType || mistakeTypes[0])
     }, [initialType])
 
     const handleAdd = async () => {
@@ -60,55 +62,58 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
         await dispatch(saveMistakes(updatedMistakes))
 
         setValue('')
-        setSelectedType(initialType)
+        setSelectedType(initialType || mistakeTypes[0])
         onHide()
     }
 
     return (
         <Dialog
-            header="Add Mistake"
+            header="Add Mistake: choose type and enter description"
             visible={visible}
             onHide={onHide}
             style={{ width: '750px' }}
         >
-            {/* Select Button */}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', width: '100%' }}>
-                <div className="card flex justify-content-center" style={{ margin: '1rem 0' }}>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+                {/* Select Button */}
+                <div style={{ margin: '1rem 0', width: '100%' }}>
                     <SelectButton
                         id="type"
                         value={selectedType}
                         onChange={(e) => setSelectedType(e.value)}
                         options={mistakeTypeOptions}
                         multiple={false}
+                        className="w-full"
                         itemTemplate={(option) => (
                             <div style={{ textTransform: 'capitalize' }}>{option.label}</div>
                         )}
                     />
                 </div>
 
-                {/* Floating Input - now full width */}
+                {/* Floating Input */}
                 <div style={{ margin: '1rem 0', width: '100%' }}>
                     <FloatingInput
                         id="value"
-                        label="Value"
+                        label="Mistake description"
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
                     />
                 </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <Button label="Close" className="p-button-secondary" onClick={onHide} />
-                <Button
-                    label="Add"
-                    className="p-button-success"
-                    onClick={handleAdd}
-                    disabled={!selectedType || !value.trim()} // blocks add button if no type or empty value
-                />
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', width: '100%' }}>
+                    <Button label="Close" className="p-button-secondary" onClick={onHide} />
+                    <Button
+                        label="Add"
+                        className="p-button-success"
+                        onClick={handleAdd}
+                        disabled={!selectedType || !value.trim()}
+                    />
+                </div>
             </div>
         </Dialog>
     )
 }
+
 
 export default AddMistakeModal
