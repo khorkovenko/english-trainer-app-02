@@ -21,6 +21,8 @@ export default function LoginModal({ visible }) {
     }
 
     const handleGoogleLogin = async () => {
+        console.log('Redirect URL:', process.env.NEXT_PUBLIC_REDIRECT_URL);
+
         setErrorMessage('')
         await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
