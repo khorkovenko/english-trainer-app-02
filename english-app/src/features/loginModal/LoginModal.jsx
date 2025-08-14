@@ -24,7 +24,7 @@ export default function LoginModal({ visible }) {
         setErrorMessage('')
         await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin },
+            options: { redirectTo: process.env.NEXT_PUBLIC_REDIRECT_URL },
         })
     }
 
