@@ -72,6 +72,7 @@ function App() {
 
     const openMistakeModal = (type) => {
         if (!type) return
+        if (type === 'mistakes') type = 'vocabulary'
         setMistakeType(type)
         setMistakeModalVisible(true)
     }

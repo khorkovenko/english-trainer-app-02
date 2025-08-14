@@ -42,13 +42,16 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
     const dispatch = useDispatch()
     const mistakesMap = useSelector(state => state.mistakes.data)
 
-    // Use first type as default if initialType is null
     const [selectedType, setSelectedType] = useState(initialType || mistakeTypes[0])
     const [value, setValue] = useState('')
 
+    // Reset every time modal opens
     useEffect(() => {
-        setSelectedType(initialType || mistakeTypes[0])
-    }, [initialType])
+        if (visible) {
+            setSelectedType(initialType || mistakeTypes[0])
+            setValue('')
+        }
+    }, [visible, initialType])
 
     const handleAdd = async () => {
         if (!selectedType || !value.trim()) return
@@ -74,8 +77,6 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
             style={{ width: '750px' }}
         >
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-
-                {/* Select Button */}
                 <div style={{ margin: '1rem 0', width: '100%' }}>
                     <SelectButton
                         id="type"
@@ -90,7 +91,6 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
                     />
                 </div>
 
-                {/* Floating Input */}
                 <div style={{ margin: '1rem 0', width: '100%' }}>
                     <FloatingInput
                         id="value"
@@ -100,7 +100,6 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
                     />
                 </div>
 
-                {/* Action Buttons */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', width: '100%' }}>
                     <Button label="Close" className="p-button-secondary" onClick={onHide} />
                     <Button
