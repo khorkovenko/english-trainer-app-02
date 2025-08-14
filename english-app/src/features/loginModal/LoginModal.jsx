@@ -21,18 +21,10 @@ export default function LoginModal({ visible }) {
     }
 
     const handleGoogleLogin = async () => {
-        console.log('Redirect URL:', process.env.NEXT_PUBLIC_REDIRECT_URL);
-
-        const redirectUrl = typeof window !== 'undefined'
-            ? window.location.origin
-            : 'https://english-trainer-app-02.vercel.app';
-
-        console.log('Redirect URL:', redirectUrl);
-
         setErrorMessage('')
         await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: redirectUrl },
+            options: { redirectTo: process.env.NEXT_PUBLIC_REDIRECT_URL || window.location.origin },
         })
     }
 
