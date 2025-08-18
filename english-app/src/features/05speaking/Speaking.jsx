@@ -15,21 +15,7 @@ import {
     deleteSpeaking
 } from './speakingSlice';
 import { Tooltip } from 'primereact/tooltip';
-
-const FloatingInput = ({ id, label, value, onChange, disabled }) => (
-    <span
-        className="p-float-label"
-        style={{
-            flex: '1 1 200px',
-            minWidth: '200px',
-            display: 'inline-flex',
-            flexDirection: 'column'
-        }}
-    >
-        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
-        <label htmlFor={id}>{label}</label>
-    </span>
-);
+import FloatingInput from "../../components/FloatingInput";
 
 const DEFAULT_PROMPT = 'Describe the topic in detail and suggest speaking questions.';
 

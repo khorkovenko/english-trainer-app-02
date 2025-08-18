@@ -4,6 +4,7 @@ import {fetchMistakes, saveMistakes, addMistake} from './mistakesSlice'
 import {InputText} from 'primereact/inputtext'
 import {Button} from 'primereact/button'
 import {ConfirmDialog, confirmDialog} from 'primereact/confirmdialog'
+import FloatingInput from "../../components/FloatingInput";
 
 const mistakeTypes = [
     'vocabulary',
@@ -13,21 +14,6 @@ const mistakeTypes = [
     'speaking',
     'writing'
 ]
-
-const FloatingInput = ({id, label, value, onChange, disabled}) => (
-    <span
-        className="p-float-label"
-        style={{
-            flex: '1 1 160px',
-            width: '100px',
-            display: 'inline-flex',
-            flexDirection: 'column'
-        }}
-    >
-        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full"/>
-        <label htmlFor={id}>{label}</label>
-    </span>
-)
 
 const Mistakes = () => {
     const dispatch = useDispatch()
@@ -96,11 +82,12 @@ const Mistakes = () => {
             </p>
 
             <div style={{display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '1rem'}}>
-                <InputText
-                    placeholder="Search mistakes..."
+                <FloatingInput
+                    id="search-mistakes"
+                    label="Search mistakes"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    style={{width: '200px'}}
+                    width="200px"
                 />
                 <Button label="Reset Inputs" icon="pi pi-refresh" className="p-button-warning"
                         onClick={handleResetInputs}/>
@@ -145,6 +132,7 @@ const Mistakes = () => {
                                             setInputs({...inputs, [type]: e.target.value})
                                         }
                                         disabled={false}
+                                        width="200px"
                                     />
                                     <Button
                                         icon="pi pi-check"

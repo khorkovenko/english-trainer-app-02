@@ -5,6 +5,7 @@ import { SelectButton } from 'primereact/selectbutton'
 import { InputText } from 'primereact/inputtext'
 import { useSelector, useDispatch } from 'react-redux'
 import { addMistake, saveMistakes } from './mistakesSlice'
+import FloatingInput from "../../components/FloatingInput";
 
 const mistakeTypes = [
     'vocabulary',
@@ -17,27 +18,6 @@ const mistakeTypes = [
 
 const mistakeTypeOptions = mistakeTypes.map(t => ({ label: t, value: t }))
 
-const FloatingInput = ({ id, label, value, onChange, disabled }) => (
-    <span
-        className="p-float-label"
-        style={{
-            flex: '1 1 auto',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column'
-        }}
-    >
-        <InputText
-            id={id}
-            value={value}
-            onChange={onChange}
-            disabled={disabled}
-            className="w-full"
-        />
-        <label htmlFor={id}>{label}</label>
-    </span>
-)
-
 const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
     const dispatch = useDispatch()
     const mistakesMap = useSelector(state => state.mistakes.data)
@@ -45,7 +25,6 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
     const [selectedType, setSelectedType] = useState(initialType || mistakeTypes[0])
     const [value, setValue] = useState('')
 
-    // Reset every time modal opens
     useEffect(() => {
         if (visible) {
             setSelectedType(initialType || mistakeTypes[0])
@@ -97,6 +76,7 @@ const AddMistakeModal = ({ visible, onHide, initialType = null }) => {
                         label="Mistake description"
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
+                        width="700px"
                     />
                 </div>
 

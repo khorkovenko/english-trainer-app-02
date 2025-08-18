@@ -15,21 +15,7 @@ import {
     deleteListening
 } from './listeningSlice';
 import { Tooltip } from 'primereact/tooltip';
-
-const FloatingInput = ({ id, label, value, onChange, disabled }) => (
-    <span
-        className="p-float-label"
-        style={{
-            flex: '1 1 160px',
-            minWidth: '160px',
-            display: 'inline-flex',
-            flexDirection: 'column'
-        }}
-    >
-        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
-        <label htmlFor={id}>{label}</label>
-    </span>
-);
+import FloatingInput from "../../components/FloatingInput";
 
 const DEFAULT_PROMPT = 'Explain the theme in detail and give listening comprehension questions.';
 
@@ -220,6 +206,9 @@ export default function Listening() {
                 label="Listening Theme"
                 value={newListening.theme}
                 onChange={(e) => setNewListening({ theme: e.target.value })}
+                fullWidth={false}
+
+                flex="0 0 160px"
             />
             <span
                 style={{

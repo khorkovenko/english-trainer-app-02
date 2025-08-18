@@ -10,16 +10,7 @@ import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { fetchAuthUser } from '../loginModal/authSlice';
 import { fetchGrammarRules, saveGrammarRule, deleteGrammarRule } from './grammarSlice';
 import { SplitButton } from 'primereact/splitbutton';
-
-const FloatingInput = ({ id, label, value, onChange, disabled }) => (
-    <span
-        className="p-float-label"
-        style={{ flex: '1 1 200px', minWidth: '200px', display: 'inline-flex', flexDirection: 'column' }}
-    >
-        <InputText id={id} value={value} onChange={onChange} disabled={disabled} className="w-full" />
-        <label htmlFor={id}>{label}</label>
-    </span>
-);
+import FloatingInput from "../../components/FloatingInput";
 
 const Grammar = () => {
     const dispatch = useDispatch();
